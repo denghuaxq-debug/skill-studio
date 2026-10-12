@@ -1,3 +1,11 @@
+/**
+ * 角色操作的纯函数集合，便于单测与复用。
+ *
+ * 注意：界面里生成角色 Skill 走的是 index.html 里的 roleMarkdown()，
+ * 那边按 role.invoke 命名（$java → name: java）；本文件的 generateRoleSkill
+ * 按 role.id 命名，两者规则不同。目前只有测试引用本文件，改这里不会影响界面行为。
+ * 如果哪天要把生成逻辑收到这里，记得先统一命名规则。
+ */
 const slugify = (value) => {
   const slug = value
     .trim()
