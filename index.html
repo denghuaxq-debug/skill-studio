@@ -1,0 +1,1788 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Skill Studio · 角色与 Skills 编排器</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --panel-soft: #f8faff;
+      --ink: #172033;
+      --muted: #7d879b;
+      --line: #e8ecf4;
+      --blue: #4868f4;
+      --blue-soft: #edf1ff;
+      --mint: #36b98a;
+      --mint-soft: #e9faf4;
+      --amber: #f3a84d;
+      --amber-soft: #fff6e7;
+      --rose: #ef6c83;
+      --rose-soft: #fff0f3;
+      --shadow: 0 18px 50px rgba(32, 49, 92, .08);
+    }
+    * { box-sizing: border-box; scrollbar-width: none; -ms-overflow-style: none; }
+    *::-webkit-scrollbar { width: 0; height: 0; display: none; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    button, input { font: inherit; }
+    button { border: 0; cursor: pointer; }
+    .app { min-height: 100vh; display: grid; grid-template-columns: 244px 1fr; }
+    .sidebar { background: #10182c; color: #dce4f8; padding: 22px 16px; display: flex; flex-direction: column; gap: 24px; position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; overflow-x: hidden; }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 10px; }
+    .brand-copy { flex: 1; min-width: 0; }
+    .brand-mark { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; box-shadow: 0 8px 18px rgba(90, 119, 255, .28); }
+    .brand-mark img { width: 100%; height: 100%; display: block; border-radius: inherit; }
+    .brand strong { font-size: 14px; letter-spacing: .2px; }
+    .brand small { display: block; color: #7f8baa; font-size: 11px; margin-top: 2px; }
+    .side-label { color: #66728f; font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px; padding: 0 10px; }
+    .role-list { display: grid; gap: 6px; }
+    .role { width: 100%; padding: 11px 10px; border-radius: 12px; display: flex; gap: 10px; align-items: center; color: #aeb9d4; background: transparent; text-align: left; transition: .18s ease; }
+    .role:hover { background: rgba(255,255,255,.06); color: white; }
+    .role.active { color: white; background: rgba(102, 127, 255, .2); box-shadow: inset 3px 0 0 #7d92ff; }
+    .role-entry { display: flex; align-items: center; min-width: 0; position: relative; }
+    .role-entry .role { flex: 1; min-width: 0; padding-right: 38px; }
+    .role-remove { flex: 0 0 auto; width: 24px; height: 24px; margin-left: -34px; z-index: 2; border-radius: 7px; color: #8e9abc; background: transparent; font-size: 15px; line-height: 1; opacity: .72; }
+    .role-remove:hover, .role-remove:focus-visible { color: #ff9aaa; background: rgba(239, 108, 131, .14); opacity: 1; outline: none; }
+    .role-icon { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; background: rgba(255,255,255,.08); font-size: 16px; }
+    .role.active .role-icon { background: #5b72eb; }
+    .role-copy { min-width: 0; }
+    .role-copy strong { display: block; font-size: 12px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .role-copy span { display: block; color: #73809e; font-size: 10px; margin-top: 3px; }
+    .role.active .role-copy span { color: #aebaff; }
+    .new-role { margin-top: 2px; width: 100%; padding: 10px; border: 1px dashed #445273; border-radius: 11px; color: #aeb9d4; background: transparent; font-size: 12px; }
+    .new-role:hover { border-color: #7d92ff; color: white; }
+    .new-role-icon { font-size: 13px; }
+    .sidebar-toggle { flex: 0 0 auto; width: 25px; height: 25px; display: grid; place-items: center; border-radius: 8px; color: #cfd8ee; background: rgba(255, 255, 255, .1); font-size: 12px; line-height: 1; transition: .18s ease; }
+    .sidebar-toggle:hover { color: white; background: rgba(125, 146, 255, .45); }
+    .sidebar-toggle:focus-visible { outline: 2px solid #7d92ff; outline-offset: 2px; }
+    .nav-icon { display: inline-block; width: 16px; text-align: center; }
+    .app.collapsed { grid-template-columns: 68px 1fr; }
+    .app.collapsed .sidebar { padding: 22px 10px; }
+    .app.collapsed .brand { padding: 0; justify-content: center; flex-direction: column; gap: 10px; }
+    .app.collapsed .brand-copy { display: none; }
+    .app.collapsed .side-label { display: none; }
+    .app.collapsed .role-entry .role { padding: 10px; justify-content: center; }
+    .app.collapsed .role-copy { display: none; }
+    .app.collapsed .role-remove { display: none; }
+    .app.collapsed .new-role { padding: 10px 0; font-size: 15px; }
+    .app.collapsed .new-role-text { display: none; }
+    .app.collapsed .side-nav button { padding: 10px 0; text-align: center; }
+    .app.collapsed .nav-text { display: none; }
+    .app.collapsed .nav-icon { width: auto; font-size: 14px; }
+    .app.collapsed .sidebar-toggle { width: 28px; height: 28px; }
+    .side-nav { margin-top: auto; display: grid; gap: 5px; }
+    .side-roles { flex: 0 0 auto; }
+    .side-nav button { color: #8995b1; background: transparent; padding: 10px; text-align: left; border-radius: 10px; font-size: 12px; }
+    .side-nav button:hover { color: white; background: rgba(255,255,255,.06); }
+    .main { padding: 24px 28px 28px; min-width: 0; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 25px; }
+    .eyebrow { color: var(--blue); font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .sync-state { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; padding: 9px 12px; background: white; border: 1px solid var(--line); border-radius: 10px; }
+    .dot { width: 7px; height: 7px; background: var(--mint); border-radius: 50%; box-shadow: 0 0 0 3px var(--mint-soft); }
+    .primary { background: var(--blue); color: white; padding: 10px 14px; border-radius: 10px; font-size: 12px; box-shadow: 0 8px 18px rgba(72,104,244,.2); }
+    .primary:hover { background: #3d5be0; }
+    .layout { display: grid; grid-template-columns: minmax(520px, 1fr) 310px; gap: 18px; align-items: start; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+    .canvas-card { min-height: 700px; position: relative; overflow: hidden; background: radial-gradient(circle at 50% 48%, #fbfcff 0, #fff 45%, #fff 100%); }
+    .canvas-head { display: flex; align-items: center; justify-content: space-between; padding: 20px 22px 0; position: relative; z-index: 3; }
+    .canvas-head strong { font-size: 14px; }
+    .canvas-head span { color: var(--muted); font-size: 11px; margin-left: 8px; }
+    .canvas-actions { display: flex; align-items: center; gap: 7px; }
+    .canvas-actions .outline { padding: 7px 10px; }
+    .view-toggle { display: flex; gap: 3px; padding: 3px; background: var(--panel-soft); border-radius: 8px; }
+    .view-toggle button { color: var(--muted); background: transparent; padding: 5px 8px; border-radius: 6px; font-size: 10px; }
+    .view-toggle button.active { color: var(--blue); background: white; box-shadow: 0 2px 7px rgba(34,50,90,.08); }
+    .orbit-viewport { overflow-x: auto; overflow-y: hidden; margin-top: 10px; }
+    .orbit-stage { height: 560px; position: relative; transition: height .18s ease; }
+    .orbit { position: absolute; left: 50%; top: 50%; border: 1px dashed #dce3f2; border-radius: 50%; transform: translate(-50%, -50%); }
+    .orbit.one { width: 280px; height: 280px; }
+    .orbit.two { width: 456px; height: 456px; border-color: #eef1f8; }
+    .orbit-label { position: absolute; color: #a3aec3; font-size: 10px; background: white; padding: 3px 7px; border-radius: 5px; }
+    .orbit-label.core { top: 38px; left: calc(50% - 140px); }
+    .orbit-label.optional { top: 0; left: calc(50% + 135px); }
+    .connector { position: absolute; left: 50%; top: 50%; width: 1px; height: 160px; background: linear-gradient(#bdc8ff, #e9edf7); transform-origin: top center; z-index: 0; }
+    .connector.a { transform: translate(-50%, 0) rotate(-69deg); }
+    .connector.b { transform: translate(-50%, 0) rotate(-22deg); }
+    .connector.c { transform: translate(-50%, 0) rotate(28deg); }
+    .connector.d { transform: translate(-50%, 0) rotate(70deg); }
+    .connector.e { height: 205px; transform: translate(-50%, 0) rotate(145deg); background: linear-gradient(#d8dff3, #f0f2f7); }
+    .connector.f { height: 205px; transform: translate(-50%, 0) rotate(205deg); background: linear-gradient(#d8dff3, #f0f2f7); }
+    .person { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 174px; height: 174px; border-radius: 50%; background: white; border: 10px solid #eef1ff; box-shadow: 0 14px 34px rgba(72,104,244,.16), 0 0 0 1px #cfd8ff; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2; color: var(--ink); }
+    .person:hover, .person:focus-visible { border-color: #dce3ff; box-shadow: 0 18px 38px rgba(72,104,244,.22), 0 0 0 2px #91a3ff; outline: none; }
+    .person-avatar { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 16px; background: linear-gradient(145deg, #dfe6ff, #f1f4ff); font-size: 26px; margin-bottom: 7px; }
+    .person strong { font-size: 13px; }
+    .person span { color: var(--muted); font-size: 10px; margin-top: 4px; }
+    .person-settings-summary { color: var(--blue) !important; font-size: 9px !important; }
+    .person-status { color: var(--mint); font-size: 10px; margin-top: 9px; display: flex; gap: 5px; align-items: center; }
+    .person-status i { width: 5px; height: 5px; border-radius: 50%; background: var(--mint); }
+    .skill-node { position: absolute; width: 112px; min-height: 68px; background: white; border: 1px solid var(--line); border-radius: 13px; box-shadow: 0 8px 22px rgba(47,66,112,.08); z-index: 2; text-align: center; transition: .18s ease; }
+    .skill-node:hover, .skill-node.selected { border-color: #91a3ff; transform: translateY(-3px); box-shadow: 0 12px 24px rgba(72,104,244,.16); }
+    .skill-node.inactive { opacity: .38; filter: grayscale(.45); }
+    .dynamic-local-node { border-color: #9bdcc6; }
+    .dynamic-local-node { cursor: grab; user-select: none; }
+    .dynamic-local-node.dragging { cursor: grabbing; transition: none; z-index: 4; }
+    .skill-node-main { width: 100%; min-height: 68px; padding: 10px 8px; color: var(--ink); background: transparent; text-align: center; border-radius: 13px; cursor: grab; }
+    .skill-node-main:focus-visible { outline: 2px solid #91a3ff; outline-offset: -3px; }
+    .skill-node-remove { position: absolute; top: 5px; right: 5px; width: 18px; height: 18px; display: grid; place-items: center; padding: 0; border-radius: 50%; color: #9aa6bb; background: var(--panel-soft); font-size: 14px; line-height: 1; opacity: 0; transform: scale(.9); transition: .15s ease; z-index: 3; }
+    .skill-node:hover .skill-node-remove, .skill-node:focus-within .skill-node-remove { opacity: 1; transform: scale(1); }
+    .skill-node-remove:hover, .skill-node-remove:focus-visible { color: var(--rose); background: var(--rose-soft); outline: none; }
+    .skill-node .skill-icon { display: block; font-size: 17px; margin-bottom: 4px; }
+    .skill-node strong { display: block; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .skill-node small { display: inline-block; margin-top: 5px; font-size: 9px; padding: 2px 5px; border-radius: 4px; color: var(--blue); background: var(--blue-soft); }
+    .skill-node.core small { color: var(--mint); background: var(--mint-soft); }
+    .graph-empty { position: absolute; left: 50%; top: calc(50% + 116px); transform: translateX(-50%); color: var(--muted); font-size: 11px; text-align: center; white-space: nowrap; }
+    .graph-empty.hidden { display: none; }
+    .skill-list-view { display: none; min-width: 0; min-height: 560px; grid-template-columns: minmax(0, 1fr); padding: 24px 22px 74px; }
+    .skill-list-view.visible { display: grid; align-content: start; gap: 9px; }
+    .assigned-list-empty { display: grid; place-items: center; min-height: 420px; color: var(--muted); font-size: 11px; text-align: center; }
+    .assigned-skill-row { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; overflow: hidden; padding: 7px 8px 7px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-soft); text-align: left; }
+    .assigned-skill-row:hover { border-color: #91a3ff; background: var(--blue-soft); }
+    .assigned-skill-main { display: flex; align-items: center; gap: 12px; width: 0; min-width: 0; flex: 1; padding: 6px 0; color: var(--ink); background: transparent; text-align: left; }
+    .assigned-skill-main:focus-visible { outline: 2px solid #91a3ff; outline-offset: 2px; border-radius: 8px; }
+    .assigned-skill-icon { width: 34px; height: 34px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 10px; color: var(--blue); background: white; font-size: 16px; }
+    .assigned-skill-copy { min-width: 0; flex: 1; }
+    .assigned-skill-copy strong { display: block; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .assigned-skill-copy span { display: block; color: var(--muted); font-size: 10px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .assigned-skill-mode { flex: 0 0 auto; color: var(--blue); background: var(--blue-soft); padding: 5px 7px; border-radius: 6px; font-size: 10px; }
+    .assigned-skill-mode.core { color: var(--mint); background: var(--mint-soft); }
+    .assigned-skill-remove { flex: 0 0 auto; padding: 6px 8px; border: 1px solid #f0d9df; border-radius: 7px; color: var(--rose); background: white; font-size: 10px; }
+    .assigned-skill-remove:hover, .assigned-skill-remove:focus-visible { border-color: var(--rose); background: var(--rose-soft); outline: none; }
+    .legend { position: absolute; bottom: 20px; left: 22px; right: 22px; display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 10px; }
+    .legend-left { display: flex; gap: 14px; }
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+    .legend-line { width: 18px; border-top: 1px dashed #cbd4e6; }
+    .legend-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--mint); }
+    .side-panel { display: grid; gap: 14px; }
+    .inspector { padding: 20px; }
+    .inspector-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .inspector-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 12px; font-size: 21px; background: var(--amber-soft); }
+    .inspector h2 { font-size: 16px; margin: 13px 0 5px; }
+    .inspector p { color: var(--muted); font-size: 11px; line-height: 1.6; margin: 0 0 17px; }
+    .detail-tabs { display: flex; gap: 4px; padding: 3px; margin: 15px 0 14px; background: var(--panel-soft); border-radius: 8px; }
+    .detail-tabs button { flex: 1; color: var(--muted); background: transparent; padding: 7px 6px; border-radius: 6px; font-size: 10px; }
+    .detail-tabs button.active { color: var(--blue); background: white; box-shadow: 0 2px 6px rgba(34,50,90,.08); }
+    .detail-panel.hidden { display: none; }
+    .content-link { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 12px; margin: 15px 0 2px; color: #4b5d91; background: var(--blue-soft); border: 1px solid #e1e7ff; border-radius: 9px; font-size: 10px; text-align: left; }
+    .content-link:hover { background: #e3e9ff; }
+    .content-link span:last-child { color: var(--blue); font-size: 14px; }
+    .md-path { color: var(--muted); font-size: 10px; padding: 0 0 9px; }
+    .md-preview { margin: 0; max-height: 400px; overflow: auto; padding: 13px; border-radius: 10px; background: #111a2e; color: #dce6ff; font: 10px/1.75 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; }
+    .md-preview::selection { background: #41558e; }
+    .md-editor { display: none; width: 100%; min-height: 300px; resize: vertical; padding: 13px; border: 1px solid #bfcaff; border-radius: 10px; outline: none; background: #111a2e; color: #dce6ff; font: 10px/1.75 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .md-editor.visible { display: block; }
+    .md-preview.hidden { display: none; }
+    .content-actions { display: flex; gap: 7px; margin-top: 12px; }
+    .content-actions button { flex: 1; white-space: nowrap; }
+    .hidden-action { display: none; }
+    .hidden-action.visible { display: block; }
+    .close { color: #b0b8c8; background: transparent; font-size: 18px; }
+    .field { border-top: 1px solid var(--line); padding: 13px 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .field label { color: var(--muted); font-size: 11px; }
+    .alias-field { border-top: 1px solid var(--line); padding: 13px 0 4px; }
+    .alias-field label { display: block; color: var(--muted); font-size: 11px; margin-bottom: 7px; }
+    .alias-editor { display: flex; gap: 6px; }
+    .alias-editor input { min-width: 0; flex: 1; padding: 8px 9px; border: 1px solid var(--line); border-radius: 8px; outline: none; color: var(--ink); background: var(--panel-soft); font-size: 11px; }
+    .alias-editor input:focus { border-color: #9aacff; box-shadow: 0 0 0 3px var(--blue-soft); background: white; }
+    .alias-editor input:disabled { opacity: .6; cursor: not-allowed; }
+    .alias-editor button { flex: 0 0 auto; padding: 8px 9px; border-radius: 8px; color: var(--blue); background: var(--blue-soft); font-size: 10px; }
+    .alias-editor button:hover, .alias-editor button:focus-visible { background: #e1e7ff; outline: none; }
+    .alias-help { color: var(--muted); font-size: 9px; line-height: 1.5; margin: 6px 0 0; }
+    .field strong { font-size: 11px; text-align: right; }
+    .chip { display: inline-flex; color: var(--blue); background: var(--blue-soft); border-radius: 6px; padding: 4px 7px; font-size: 10px; }
+    .segmented { display: flex; background: var(--panel-soft); padding: 3px; border-radius: 7px; }
+    .segmented button { color: var(--muted); background: transparent; padding: 5px 7px; border-radius: 5px; font-size: 9px; }
+    .segmented button.active { color: var(--blue); background: white; box-shadow: 0 2px 5px rgba(34,50,90,.08); }
+    .topbar-main { min-width: 0; }
+    .invoke-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; margin-top: 12px; }
+    .invoke-title { color: var(--muted); font-size: 10px; letter-spacing: .3px; }
+    .invoke-bar .codex-badge { gap: 8px; padding: 5px 10px 5px 6px; background: var(--panel-soft); border: 1px solid var(--line); border-radius: 9px; }
+    .invoke-input { width: 210px; border: 0; outline: none; background: transparent; color: #42506e; font: inherit; font-size: 11px; }
+    .invoke-input::placeholder { color: #a9b2c6; }
+    .invoke-hint { color: var(--muted); font-size: 10px; }
+    .codex-badge { display: flex; gap: 8px; align-items: center; color: #42506e; font-size: 11px; }
+    .codex-logo { width: 22px; height: 22px; background: #111827; color: white; border-radius: 7px; display: grid; place-items: center; font-size: 11px; }
+    .outline { color: var(--blue); background: var(--blue-soft); padding: 8px 11px; border-radius: 8px; font-size: 10px; }
+    .outline:hover { background: #e2e8ff; }
+    .tip { padding: 16px 18px; background: linear-gradient(145deg, #f0f3ff, #fafbff); border: 1px solid #e3e8ff; border-radius: 14px; color: #5c6b92; font-size: 11px; line-height: 1.65; }
+    .tip strong { display: block; color: #44568c; margin-bottom: 4px; }
+    .local-library { padding: 17px 20px; }
+    .library-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .library-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; }
+    .local-library h3 { margin: 0; font-size: 13px; }
+    .local-library p { color: var(--muted); font-size: 10px; line-height: 1.55; margin: 7px 0 11px; }
+    .live-badge { color: var(--mint); background: var(--mint-soft); padding: 4px 7px; border-radius: 5px; font-size: 9px; }
+    .local-search { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; outline: none; color: var(--ink); background: var(--panel-soft); font-size: 10px; }
+    .local-search:focus { border-color: #9aacff; background: white; box-shadow: 0 0 0 3px var(--blue-soft); }
+    .local-list { display: grid; gap: 5px; max-height: 155px; overflow-y: auto; overflow-x: hidden; }
+    .library-empty { color: var(--muted); padding: 18px 0; text-align: center; font-size: 10px; }
+    .local-skill-row { display: flex; align-items: stretch; gap: 4px; min-width: 0; }
+    .local-skill { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-soft); text-align: left; }
+    .local-skill:hover { border-color: #91a3ff; background: var(--blue-soft); }
+    .local-skill-add { flex: 0 0 auto; align-self: center; white-space: nowrap; color: var(--blue); background: var(--blue-soft); border: 1px solid #e1e7ff; border-radius: 8px; padding: 7px 9px; font-size: 9px; }
+    .local-skill-add:hover { background: #dce4ff; }
+    .local-skill-add:disabled { color: var(--muted); background: #eef1f5; border-color: #e2e7ef; cursor: default; }
+    .local-skill-add:disabled:hover { background: #eef1f5; }
+    .local-skill strong { display: block; color: var(--ink); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .local-skill-copy { min-width: 0; flex: 1 1 auto; overflow: hidden; }
+    .local-skill span { display: block; max-width: 100%; color: var(--muted); font-size: 9px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .local-skill em { flex: 0 0 auto; color: var(--blue); font-size: 9px; font-style: normal; white-space: nowrap; }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 16px); opacity: 0; pointer-events: none; background: #172033; color: white; padding: 11px 15px; border-radius: 9px; font-size: 11px; transition: .25s ease; box-shadow: 0 12px 30px rgba(15,25,48,.25); }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: rgba(15, 24, 46, .38); backdrop-filter: blur(5px); }
+    .modal-backdrop.hidden { display: none; }
+    .picker-card { width: min(620px, 100%); max-height: min(680px, 90vh); overflow: hidden; background: white; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 24px 70px rgba(15, 27, 65, .25); }
+    .local-skill-picker { width: min(900px, calc(100vw - 40px)); max-height: min(820px, 90vh); }
+    .role-export-card { width: min(820px, calc(100vw - 40px)); max-height: min(820px, 90vh); }
+    .role-export-body { padding: 18px 22px 22px; }
+    .role-export-preview { max-height: min(58vh, 560px); }
+    .picker-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 20px 22px 15px; border-bottom: 1px solid var(--line); }
+    .picker-head h2 { margin: 0; font-size: 17px; }
+    .picker-head p { color: var(--muted); font-size: 11px; margin: 6px 0 0; }
+    .picker-close { color: #a3acc0; background: transparent; font-size: 20px; }
+    .picker-search { width: calc(100% - 40px); margin: 16px 20px 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; outline: none; color: var(--ink); font-size: 11px; }
+    .picker-search:focus { border-color: #9aacff; box-shadow: 0 0 0 3px var(--blue-soft); }
+    .picker-list { display: grid; gap: 7px; max-height: 450px; overflow: auto; padding: 0 20px 20px; }
+    .local-skill-picker .picker-list { max-height: min(620px, calc(90vh - 190px)); }
+    .picker-item { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 14px; text-align: left; background: var(--panel-soft); border: 1px solid var(--line); border-radius: 10px; }
+    .picker-item:hover { border-color: #91a3ff; background: var(--blue-soft); }
+    .picker-item strong { display: block; font-size: 11px; }
+    .picker-item > span { min-width: 0; flex: 1; }
+    .picker-item span span { display: block; max-width: none; color: var(--muted); font-size: 10px; line-height: 1.5; margin-top: 4px; white-space: normal; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .picker-item em { color: var(--blue); font-size: 10px; font-style: normal; white-space: nowrap; }
+    .picker-empty { color: var(--muted); padding: 25px 0; text-align: center; font-size: 11px; }
+    .role-settings-card { width: min(560px, 100%); }
+    .role-settings-body { padding: 20px 22px 8px; }
+    .role-settings-label { display: block; color: var(--ink); font-size: 12px; font-weight: 700; }
+    .role-settings-help { color: var(--muted); font-size: 10px; line-height: 1.6; margin: 7px 0 0; }
+    .role-settings-textarea { width: 100%; min-height: 190px; resize: vertical; margin-top: 10px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; outline: none; color: var(--ink); background: var(--panel-soft); font: inherit; font-size: 11px; line-height: 1.7; }
+    .role-settings-textarea:focus { border-color: #9aacff; background: white; box-shadow: 0 0 0 3px var(--blue-soft); }
+    .role-settings-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 22px 20px; }
+    .role-create-card { width: min(560px, 100%); }
+    .role-create-body { padding: 20px 22px 8px; }
+    .role-create-field { display: block; color: var(--ink); font-size: 12px; font-weight: 700; }
+    .role-create-field + .role-create-field { margin-top: 16px; }
+    .role-create-input, .role-create-textarea { width: 100%; margin-top: 8px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; outline: none; color: var(--ink); background: var(--panel-soft); font: inherit; font-size: 11px; line-height: 1.6; }
+    .role-create-textarea { min-height: 104px; resize: vertical; }
+    .role-create-input:focus, .role-create-textarea:focus { border-color: #9aacff; background: white; box-shadow: 0 0 0 3px var(--blue-soft); }
+    .role-create-help { color: var(--muted); font-size: 10px; line-height: 1.6; margin: 7px 0 0; }
+    .role-create-error { min-height: 16px; color: var(--rose); font-size: 10px; margin: 10px 0 0; }
+    .role-confirm-card { width: min(440px, 100%); }
+    .role-confirm-body { padding: 22px 24px 6px; text-align: center; }
+    .role-confirm-icon { width: 46px; height: 46px; margin: 0 auto 13px; display: grid; place-items: center; border-radius: 14px; color: var(--rose); background: var(--rose-soft); font-size: 20px; }
+    .role-confirm-message { color: var(--ink); font-size: 13px; line-height: 1.7; margin: 0; }
+    .role-confirm-message strong { font-weight: 700; }
+    .role-confirm-help { color: var(--muted); font-size: 10px; line-height: 1.6; margin: 9px 0 0; }
+    .role-confirm-option { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; color: var(--ink); font-size: 11px; cursor: pointer; }
+    .role-confirm-option input { width: 14px; height: 14px; accent-color: var(--blue); cursor: pointer; }
+    .danger { background: var(--rose); color: white; padding: 10px 14px; border-radius: 10px; font-size: 12px; box-shadow: 0 8px 18px rgba(239, 108, 131, .22); }
+    .danger:hover, .danger:focus-visible { background: #e05573; outline: none; }
+    .sync-history-card { width: min(620px, calc(100vw - 40px)); }
+    .library-view-card { width: min(880px, calc(100vw - 40px)); max-height: min(840px, 92vh); display: flex; flex-direction: column; }
+    .library-view-summary { padding: 0 22px 9px; color: var(--muted); font-size: 10px; }
+    .library-view-list { display: grid; gap: 7px; align-content: start; max-height: min(560px, calc(92vh - 290px)); overflow: auto; padding: 0 22px 14px; }
+    .library-view-row { display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: var(--panel-soft); border: 1px solid var(--line); border-radius: 10px; }
+    .library-view-row.assigned { border-color: #d9e7e1; background: #f5fbf8; }
+    .library-view-copy { min-width: 0; flex: 1; }
+    .library-view-copy strong { display: block; font-size: 11px; }
+    .library-view-copy span { display: block; color: var(--muted); font-size: 10px; line-height: 1.5; margin-top: 4px; }
+    .library-view-actions { display: flex; align-items: center; gap: 7px; flex: 0 0 auto; }
+    .library-view-actions button { padding: 7px 11px; font-size: 10px; white-space: nowrap; }
+    .library-view-state { flex: 0 0 auto; color: var(--mint); background: var(--mint-soft); padding: 6px 9px; border-radius: 6px; font-size: 10px; }
+    .knowledge-card { width: min(760px, calc(100vw - 40px)); max-height: min(840px, 92vh); display: flex; flex-direction: column; }
+    .knowledge-toolbar { display: flex; align-items: center; gap: 8px; padding: 14px 22px 10px; }
+    .knowledge-hint { color: var(--muted); font-size: 10px; }
+    .knowledge-list { display: grid; gap: 7px; align-content: start; max-height: min(400px, calc(92vh - 330px)); overflow: auto; padding: 0 22px 14px; }
+    .knowledge-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; background: var(--panel-soft); border: 1px solid var(--line); border-radius: 10px; }
+    .knowledge-icon { flex: 0 0 auto; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; background: white; font-size: 15px; }
+    .knowledge-copy { min-width: 0; flex: 1; display: grid; gap: 4px; }
+    .knowledge-copy input { width: 100%; padding: 5px 8px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--ink); font: inherit; font-size: 11px; }
+    .knowledge-copy input:hover { border-color: var(--line); background: white; }
+    .knowledge-copy input:focus { border-color: #9aacff; background: white; outline: none; box-shadow: 0 0 0 3px var(--blue-soft); }
+    .knowledge-path { color: var(--muted); font-size: 10px; padding: 0 8px; word-break: break-all; }
+    .knowledge-remove { flex: 0 0 auto; padding: 7px 10px; border: 1px solid #f0d9df; border-radius: 7px; color: var(--rose); background: white; font-size: 10px; }
+    .knowledge-remove:hover, .knowledge-remove:focus-visible { border-color: var(--rose); background: var(--rose-soft); outline: none; }
+    .knowledge-empty { color: var(--muted); font-size: 11px; text-align: center; padding: 26px 0; }
+    .knowledge-dir-form { display: grid; gap: 8px; padding: 0 22px 12px; }
+    .knowledge-dir-form.hidden { display: none; }
+    .knowledge-dir-form label { display: grid; gap: 4px; color: var(--muted); font-size: 10px; }
+    .knowledge-dir-form input { padding: 9px 11px; border: 1px solid var(--line); border-radius: 9px; outline: none; color: var(--ink); background: var(--panel-soft); font: inherit; font-size: 11px; }
+    .knowledge-dir-form input:focus { border-color: #9aacff; background: white; box-shadow: 0 0 0 3px var(--blue-soft); }
+    .knowledge-dir-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .sync-history-body { max-height: min(55vh, 460px); overflow: auto; padding: 12px 22px 4px; }
+    .sync-history-item { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .sync-history-item:last-child { border-bottom: 0; }
+    .sync-history-item strong { display: block; font-size: 11px; }
+    .sync-history-item span { display: block; color: var(--muted); font-size: 10px; margin-top: 4px; }
+    .sync-history-status { flex: 0 0 auto; color: var(--mint); background: var(--mint-soft); padding: 5px 8px; border-radius: 6px; font-size: 10px; }
+    .sync-history-empty { color: var(--muted); padding: 30px 0; text-align: center; font-size: 11px; }
+    @media (max-width: 1050px) { .app { grid-template-columns: 210px 1fr; } .main { padding: 20px; } .layout { grid-template-columns: 1fr; } .side-panel { grid-template-columns: 1fr 1fr; } .tip { grid-column: 1 / -1; } }
+    @media (max-width: 760px) { .app { display: block; } .sidebar { display: none; } .main { padding: 16px; } .topbar { align-items: flex-start; } .sync-state { display: none; } .top-actions { flex-shrink: 0; } .canvas-card { min-height: 620px; } .orbit-stage { transform: scale(.78); transform-origin: top center; height: 470px; margin-bottom: -70px; } .side-panel { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-mark"><img id="brandLogo" alt="Skill Studio" src="data:image/png;base64,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" /></div><div class="brand-copy"><strong>Skill Studio</strong><small>角色与 Skills 编排器</small></div><button class="sidebar-toggle" id="sidebarToggle" type="button" aria-expanded="true" aria-label="收起侧边栏" title="收起侧边栏"><span class="sidebar-toggle-icon">«</span></button></div>
+      <div class="side-roles">
+        <div class="side-label">我的角色</div>
+        <div class="role-list" style="margin-top:10px">
+          <button class="role active" data-role="backend"><div class="role-icon">👨‍💻</div><div class="role-copy"><strong>Java 后端工程师</strong><span>6 个 Skills · 已同步</span></div></button>
+          <button class="role" data-role="research"><div class="role-icon">🔎</div><div class="role-copy"><strong>市场研究员</strong><span>4 个 Skills · 草稿</span></div></button>
+          <button class="role" data-role="release"><div class="role-icon">🚀</div><div class="role-copy"><strong>发版管理员</strong><span>5 个 Skills · 已同步</span></div></button>
+          <button class="new-role" id="newRole" type="button"><span class="new-role-icon">＋</span><span class="new-role-text">新建角色 Skill</span></button>
+        </div>
+      </div>
+      <nav class="side-nav">
+        <button id="skillLibraryNav" type="button"><span class="nav-icon">▦</span><span class="nav-text">Skill 库</span></button>
+        <button id="syncHistoryNav" type="button"><span class="nav-icon">↻</span><span class="nav-text">同步记录</span></button>
+        <button id="settingsNav" type="button"><span class="nav-icon">⚙</span><span class="nav-text">设置</span></button>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-main">
+          <div class="eyebrow">Role Skill Studio</div>
+          <div class="invoke-bar">
+            <span class="invoke-title">Codex 使用状态</span>
+            <div class="codex-badge"><span class="codex-logo">✦</span><input class="invoke-input" id="invokeInput" type="text" maxlength="64" spellcheck="false" placeholder="$my-role" aria-label="Codex 调用方式" /></div>
+            <button class="outline" id="saveInvoke" type="button">保存</button>
+            <button class="outline" id="copyInvoke" type="button">复制调用方式</button>
+            <span class="invoke-hint">这个角色会以一个 Skill 的形式出现在 Codex 的 Skill 选择器中。</span>
+          </div>
+        </div>
+        <div class="top-actions"><div class="sync-state"><i class="dot"></i><span id="syncText">已同步到 Codex · 2 分钟前</span></div><button class="outline" id="exportPreviewBtn" type="button">预览导出</button><button class="outline" id="exportBtn" type="button">导出角色 Skill</button><button class="primary" id="syncBtn">同步到 Codex</button></div>
+      </header>
+
+      <section class="layout">
+        <div class="card canvas-card">
+          <div class="canvas-head"><div><strong id="canvasTitle">Java 后端工程师</strong><span>围绕这个角色启用的 Skills · 可拖动调整位置</span></div><div class="canvas-actions"><button class="outline" id="knowledgeBtn" type="button">知识库</button><button class="outline" id="addSkillBtn" type="button">＋ 添加 Skill</button><div class="view-toggle"><button class="active" id="skillGraphView" type="button">关系图</button><button id="skillListViewToggle" type="button">列表</button></div></div></div>
+          <div class="orbit-viewport"><div class="orbit-stage">
+            <div class="orbit one"></div><div class="orbit two"></div>
+            <span class="orbit-label core">核心 Skills</span><span class="orbit-label optional">按需启用</span>
+            <div class="connector a"></div><div class="connector b"></div><div class="connector c"></div><div class="connector d"></div><div class="connector e"></div><div class="connector f"></div>
+            <button class="person" id="rolePerson" type="button" aria-label="配置当前角色默认设置"><div class="person-avatar" id="personAvatar">👨‍💻</div><strong id="personName">Java 后端工程师</strong><span>编排 Skill</span><span class="person-settings-summary" id="personConstraintSummary">默认规范 · 3 条</span><div class="person-status"><i></i>可在 Codex 使用</div></button>
+            <div class="graph-empty" id="graphEmpty">扫描本地 Skill 后，赋予的能力会显示在角色周围</div>
+          </div></div>
+          <div class="skill-list-view" id="skillListView" aria-live="polite"></div>
+          <div class="legend"><div class="legend-left"><span class="legend-item"><i class="legend-line"></i>已赋予</span><span class="legend-item"><i class="legend-dot"></i>Codex 可用</span></div><span id="legendCount">等待本地 Skill 数据</span></div>
+        </div>
+
+        <aside class="side-panel">
+          <div class="card inspector">
+            <div class="inspector-head"><div class="inspector-icon" id="inspectorIcon">🧪</div><button class="close" id="closeInspector" title="关闭">×</button></div>
+            <h2 id="inspectorTitle">TDD Workflow</h2><p id="inspectorDesc">测试驱动开发流程。帮助角色先写测试，再实现功能并进行重构。</p>
+            <div class="detail-tabs"><button class="active" data-detail-tab="overview">概览</button><button data-detail-tab="content">SKILL.md</button></div>
+            <div class="detail-panel" id="overviewPanel">
+              <div class="alias-field"><label for="skillAlias">显示别名</label><div class="alias-editor"><input id="skillAlias" type="text" maxlength="60" placeholder="例如：接口设计规范" disabled /><button id="saveSkillAlias" type="button" disabled>保存</button></div><p class="alias-help">别名会显示在关系图、列表和本地 Skill 库，英文原名仍会保留在说明中。</p></div>
+              <div class="field"><label>启用模式</label><div class="segmented"><button>核心</button><button class="active">按需</button></div></div>
+              <div class="field"><label>来源</label><span class="chip" id="inspectorSource">本地 Skill 库</span></div>
+              <div class="field"><label>所需权限</label><strong id="inspectorPermission">读写项目文件</strong></div>
+              <div class="field"><label>最近使用</label><strong id="inspectorUsage">28 次</strong></div>
+              <button class="content-link" id="showContent"><span>查看这个 Skill 的具体内容</span><span>→</span></button>
+              <button class="outline" style="width:100%;margin-top:7px" id="removeSkill">从角色移除</button>
+            </div>
+            <div class="detail-panel hidden" id="contentPanel">
+              <div class="md-path" id="contentPath">尚未选择 SKILL.md</div>
+              <pre class="md-preview" id="skillContent"></pre>
+              <textarea class="md-editor" id="skillEditor" aria-label="编辑 SKILL.md 内容"></textarea>
+              <div class="content-actions"><button class="outline" id="editContent">编辑内容</button><button class="primary hidden-action" id="saveContent">保存内容</button><button class="outline" id="backOverview">返回概览</button></div>
+            </div>
+          </div>
+          <div class="card local-library"><div class="library-head"><div class="library-title"><h3>本地 Skill 库</h3><span class="live-badge" id="localCount">读取中</span></div><input class="local-search" id="localSkillSearch" type="search" placeholder="搜索 Skill 名称或描述" aria-label="搜索本地 Skill" autocomplete="off" /></div><p id="localStatus">启动本地服务后，将扫描电脑上的 SKILL.md。</p><div class="local-list" id="localSkillList"></div></div>
+          <div class="tip"><strong>设计提示</strong>中心人物是一个“编排 Skill”，周围 Skills 是它可以调度的能力。对话仍然在 Codex 中完成，客户端只负责管理和同步。</div>
+        </aside>
+      </section>
+    </main>
+  </div>
+  <div class="modal-backdrop hidden" id="skillPicker" role="dialog" aria-modal="true" aria-labelledby="pickerTitle">
+    <div class="picker-card local-skill-picker">
+      <div class="picker-head"><div><h2 id="pickerTitle">从本地 Skill 库添加</h2><p>选择一个真实的本地 Skill 赋予给当前角色。</p></div><button class="picker-close" id="pickerClose" aria-label="关闭">×</button></div>
+      <input class="picker-search" id="pickerSearch" type="search" placeholder="搜索 Skill 名称或描述" aria-label="搜索 Skill" />
+      <div class="picker-list" id="pickerList"></div>
+    </div>
+  </div>
+  <div class="modal-backdrop hidden" id="roleSettings" role="dialog" aria-modal="true" aria-labelledby="roleSettingsTitle">
+    <div class="picker-card role-settings-card">
+      <div class="picker-head"><div><h2 id="roleSettingsTitle">角色默认设置</h2><p id="roleSettingsDescription">为当前角色设置默认规范约束，后续执行任务时优先遵循。</p></div><button class="picker-close" id="roleSettingsClose" aria-label="关闭角色默认设置">×</button></div>
+      <div class="role-settings-body">
+        <label class="role-settings-label" for="roleConstraints">默认规范约束</label>
+        <textarea class="role-settings-textarea" id="roleConstraints" placeholder="每行写一条约束，例如：\n接口变更必须先补测试\n不得硬编码密钥"></textarea>
+        <p class="role-settings-help">每行一条；保存后会写入角色 Skill 的“默认规范约束”章节。重复或空白行会自动清理。</p>
+      </div>
+      <div class="role-settings-actions"><button class="outline" id="roleSettingsCancel" type="button">取消</button><button class="primary" id="roleSettingsSave" type="button">保存设置</button></div>
+    </div>
+  </div>
+  <div class="modal-backdrop hidden" id="roleCreate" role="dialog" aria-modal="true" aria-labelledby="roleCreateTitle">
+    <div class="picker-card role-create-card">
+      <div class="picker-head"><div><h2 id="roleCreateTitle">新建角色 Skill</h2><p>创建一个角色编排器，之后可以从本地 Skill 库赋予能力。</p></div><button class="picker-close" id="roleCreateClose" type="button" aria-label="关闭新建角色弹框">×</button></div>
+      <div class="role-create-body">
+        <label class="role-create-field" for="roleCreateName">角色名称<input class="role-create-input" id="roleCreateName" type="text" maxlength="80" placeholder="例如：前端工程师" autocomplete="off" /></label>
+        <label class="role-create-field" for="roleCreateDescription">角色职责<textarea class="role-create-textarea" id="roleCreateDescription" maxlength="240" placeholder="描述这个角色主要负责什么">负责调度相关 Skills 完成用户任务</textarea></label>
+        <p class="role-create-help">角色名称必填，职责用于生成角色 Skill 的说明信息。</p>
+        <p class="role-create-error" id="roleCreateError" role="alert" aria-live="polite"></p>
+      </div>
+      <div class="role-settings-actions"><button class="outline" id="roleCreateCancel" type="button">取消</button><button class="primary" id="roleCreateSubmit" type="button">创建角色</button></div>
+    </div>
+  </div>
+  <div class="modal-backdrop hidden" id="knowledgeModal" role="dialog" aria-modal="true" aria-labelledby="knowledgeTitle">
+    <div class="picker-card knowledge-card">
+      <div class="picker-head"><div><h2 id="knowledgeTitle">知识库</h2><p>给这个角色补充事实来源：指定一个目录，或者直接上传文件。同步时会一起写到角色 Skill 里。</p></div><button class="picker-close" id="knowledgeClose" type="button" aria-label="关闭知识库">×</button></div>
+      <div class="knowledge-toolbar">
+        <button class="outline" id="addKnowledgeDir" type="button">＋ 指定目录</button>
+        <button class="outline" id="uploadKnowledgeFile" type="button">上传文件</button>
+        <input type="file" id="knowledgeFileInput" multiple hidden />
+        <span class="knowledge-hint" id="knowledgeHint"></span>
+      </div>
+      <div class="knowledge-dir-form hidden" id="knowledgeDirForm">
+        <label>名称<input id="knowledgeDirName" type="text" maxlength="60" placeholder="例如：接口规范" /></label>
+        <label>目录路径<input id="knowledgeDirPath" type="text" maxlength="260" placeholder="例如：D:\docs\api" /></label>
+        <label>说明（可选）<input id="knowledgeDirNote" type="text" maxlength="160" placeholder="告诉 Codex 以这里的什么内容为准" /></label>
+        <div class="knowledge-dir-actions"><button class="outline" id="knowledgeDirCancel" type="button">取消</button><button class="primary" id="knowledgeDirConfirm" type="button">添加</button></div>
+      </div>
+      <div class="knowledge-list" id="knowledgeList"></div>
+      <div class="role-settings-actions"><button class="outline" id="knowledgeDone" type="button">关闭</button></div>
+    </div>
+  </div>
+  <div class="modal-backdrop hidden" id="skillLibraryView" role="dialog" aria-modal="true" aria-labelledby="skillLibraryTitle">
+    <div class="picker-card library-view-card">
+      <div class="picker-head"><div><h2 id="skillLibraryTitle">本地 Skill 库</h2><p>扫描到的本地 SKILL.md，可以直接赋予给当前角色。</p></div><button class="picker-close" id="skillLibraryClose" type="button" aria-label="关闭本地 Skill 库">×</button></div>
+      <input class="picker-search" id="libraryViewSearch" type="search" placeholder="搜索 Skill 名称或描述" aria-label="搜索本地 Skill" />
+      <div class="library-view-summary" id="libraryViewCount"></div>
+      <div class="library-view-list" id="libraryViewList"></div>
+      <div class="role-settings-actions"><button class="outline" id="skillLibraryCloseFooter" type="button">关闭</button></div>
+    </div>
+  </div>
+  <div class="modal-backdrop hidden" id="roleDeleteConfirm" role="dialog" aria-modal="true" aria-labelledby="roleDeleteTitle" aria-describedby="roleDeleteMessage">
+    <div class="picker-card role-confirm-card">
+      <div class="picker-head"><div><h2 id="roleDeleteTitle">删除角色</h2><p>删除后该角色的 Skill 编排配置会被移除。</p></div><button class="picker-close" id="roleDeleteClose" type="button" aria-label="关闭删除角色弹框">×</button></div>
+      <div class="role-confirm-body">
+        <div class="role-confirm-icon" aria-hidden="true">🗑</div>
+        <p class="role-confirm-message" id="roleDeleteMessage"></p>
+        <label class="role-confirm-option"><input type="checkbox" id="deleteRoleSyncFile" checked /><span>同时删除已同步到 Codex 的 Skill 文件</span></label>
+        <p class="role-confirm-help">取消勾选则只删除角色，保留已同步出去的文件。</p>
+      </div>
+      <div class="role-settings-actions"><button class="outline" id="roleDeleteCancel" type="button">取消</button><button class="danger" id="roleDeleteSubmit" type="button">删除角色</button></div>
+    </div>
+  </div>
+  <div class="modal-backdrop hidden" id="roleExportPreview" role="dialog" aria-modal="true" aria-labelledby="roleExportTitle">
+    <div class="picker-card role-export-card">
+      <div class="picker-head"><div><h2 id="roleExportTitle">导出角色 Skill 预览</h2><p>确认下面的内容后，再下载为角色 Skill 文件。</p></div><button class="picker-close" id="roleExportClose" aria-label="关闭导出预览">×</button></div>
+      <div class="role-export-body">
+        <div class="md-path" id="roleExportPath">尚未生成导出内容</div>
+        <pre class="md-preview role-export-preview" id="roleExportContent"></pre>
+        <div class="content-actions"><button class="outline" id="roleExportCancel" type="button">关闭</button><button class="primary" id="downloadRoleExport" type="button">下载角色 Skill</button></div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop hidden" id="syncHistory" role="dialog" aria-modal="true" aria-labelledby="syncHistoryTitle">
+    <div class="picker-card sync-history-card">
+      <div class="picker-head"><div><h2 id="syncHistoryTitle">同步记录</h2><p>查看角色 Skill 最近的同步状态。</p></div><button class="picker-close" id="syncHistoryClose" aria-label="关闭同步记录">×</button></div>
+      <div class="sync-history-body" id="syncHistoryList"></div>
+      <div class="role-settings-actions"><button class="outline" id="syncHistoryCancel" type="button">关闭</button></div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script src="offline-skills.js"></script>
+  <script>
+    const roles = {
+      backend: { name: 'Java 后端工程师', avatar: '👨‍💻', invoke: '$java-backend' },
+      research: { name: '市场研究员', avatar: '🔎', invoke: '$market-researcher' },
+      release: { name: '发版管理员', avatar: '🚀', invoke: '$release-manager' }
+    };
+    const toast = (message) => { const el = document.getElementById('toast'); el.textContent = message; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2200); };
+    // 老数据里的 Skill id 形如 name-<路径哈希>，换台电脑路径变了 id 就会变。
+    // 去掉尾部哈希就能还原出 Skill 的名字，用来把配置认回来。
+    function legacySkillName(id) { return String(id).replace(/-[0-9a-f]{6,8}$/, ''); }
+    // 把绝对路径缩成 ~/... 形式，换台电脑后这份文件里的路径仍然可读。
+    function shortSkillPath(value) {
+      return String(value || '')
+        .replace(/^[A-Za-z]:\\Users\\[^\\]+/i, '~')
+        .replace(/^\/Users\/[^/]+/, '~')
+        .replace(/^\/home\/[^/]+/, '~')
+        .replace(/\\/g, '/');
+    }
+    function selectSkill(id) {
+      document.querySelectorAll('.skill-node').forEach(n => n.classList.toggle('selected', n.dataset.skill === id));
+      const d = { title: '尚未选择 Skill', icon: '◌', desc: '从右侧本地 Skill 库中选择真实的 SKILL.md。', permission: '—', usage: '—', mode: '按需', content: '请先从本地 Skill 库选择一个 Skill。' };
+      document.getElementById('inspectorIcon').textContent = d.icon;
+      document.getElementById('inspectorTitle').textContent = d.title;
+      document.getElementById('inspectorDesc').textContent = d.desc;
+      document.getElementById('inspectorPermission').textContent = d.permission;
+      document.getElementById('inspectorUsage').textContent = d.usage;
+      document.getElementById('contentPath').textContent = 'skills/' + id + '/SKILL.md';
+      document.getElementById('skillContent').textContent = d.content || '该 Skill 暂无可预览内容。';
+      document.querySelectorAll('.segmented button').forEach(b => b.classList.toggle('active', b.textContent === d.mode));
+      if (!id) showDetailTab('overview');
+    }
+    function showDetailTab(tab) {
+      document.querySelectorAll('[data-detail-tab]').forEach(button => button.classList.toggle('active', button.dataset.detailTab === tab));
+      document.getElementById('overviewPanel').classList.toggle('hidden', tab !== 'overview');
+      document.getElementById('contentPanel').classList.toggle('hidden', tab !== 'content');
+    }
+    document.querySelectorAll('[data-detail-tab]').forEach(button => button.addEventListener('click', () => showDetailTab(button.dataset.detailTab)));
+    document.getElementById('showContent').addEventListener('click', () => showDetailTab('content'));
+    document.getElementById('backOverview').addEventListener('click', () => showDetailTab('overview'));
+    selectSkill(null);
+  </script>
+  <script>
+    (() => {
+      const roleStorageKey = 'skill-studio-roles-v1';
+      const syncHistoryStorageKey = 'skill-studio-sync-history-v1';
+      const defaultRoleState = {
+        backend: { name: 'Java 后端工程师', description: '负责 Spring Boot 接口开发、测试和代码审查', avatar: '👨‍💻', invoke: '$java-backend', synced: true, defaultConstraints: ['接口变更先补测试，再实现功能', '所有外部输入必须校验，禁止硬编码密钥', '遵循现有 Spring Boot 分层和异常处理规范'], skills: [{ id: 'backend-patterns', mode: 'core' }, { id: 'api-design', mode: 'core' }, { id: 'tdd-workflow', mode: 'on_demand' }, { id: 'security-review', mode: 'on_demand' }] },
+        research: { name: '市场研究员', description: '收集信息、分析竞品并输出决策材料', avatar: '🔎', invoke: '$market-researcher', synced: false, defaultConstraints: ['结论必须标注来源和日期', '区分事实、推断与建议，不夸大确定性'], skills: [{ id: 'market-research', mode: 'core' }] },
+        release: { name: '发版管理员', description: '整理发布内容、检查风险并生成发版纪要', avatar: '🚀', invoke: '$release-manager', synced: true, defaultConstraints: ['发布前完成验证检查并记录结果', '高风险变更必须说明回滚方案'], skills: [{ id: 'verification-loop', mode: 'core' }] }
+      };
+      let clientRoles;
+      let roleStateHydrated = false;
+      let persistenceQueue = Promise.resolve();
+      const defaultConstraints = Object.fromEntries(Object.entries(defaultRoleState).map(([id, role]) => [id, [...role.defaultConstraints]]));
+      const normalizeRole = (id, role) => ({
+        ...role,
+        defaultConstraints: Array.isArray(role.defaultConstraints) ? [...role.defaultConstraints] : [...(defaultConstraints[id] || [])],
+        knowledge: Array.isArray(role.knowledge) ? role.knowledge.map(entry => ({ ...entry })) : [],
+      });
+      try {
+        const storedRoles = JSON.parse(localStorage.getItem(roleStorageKey));
+        const sourceRoles = storedRoles && typeof storedRoles === 'object' ? storedRoles : defaultRoleState;
+        clientRoles = Object.fromEntries(Object.entries(sourceRoles).map(([id, role]) => [id, normalizeRole(id, role)]));
+      } catch {
+        clientRoles = Object.fromEntries(Object.entries(defaultRoleState).map(([id, role]) => [id, normalizeRole(id, role)]));
+      }
+      let activeRoleId = Object.keys(clientRoles)[0] || 'backend';
+      let currentSkillId = null;
+      let clientCatalog = {};
+      let syncHistory = [];
+      try {
+        const storedHistory = JSON.parse(localStorage.getItem(syncHistoryStorageKey));
+        syncHistory = Array.isArray(storedHistory) ? storedHistory : [];
+      } catch { syncHistory = []; }
+      const activeRole = () => clientRoles[activeRoleId];
+      const queuePersistence = (url, payload) => {
+        if (!roleStateHydrated || !['http:', 'https:'].includes(location.protocol)) return;
+        persistenceQueue = persistenceQueue.catch(() => {}).then(async () => {
+          try {
+            await fetch(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          } catch { /* 本地服务暂时不可用时仍保留浏览器内的临时状态 */ }
+        });
+      };
+      const persistRoles = () => queuePersistence('/api/roles', { roles: clientRoles });
+      const persistState = (patch) => queuePersistence('/api/state', patch);
+      const save = () => { try { localStorage.setItem(roleStorageKey, JSON.stringify(clientRoles)); } catch { /* 预览画布使用内存状态，真实客户端使用本地存储 */ } persistRoles(); };
+      const saveSyncHistory = () => { try { localStorage.setItem(syncHistoryStorageKey, JSON.stringify(syncHistory)); } catch { /* 本地预览可能禁用 localStorage */ } persistState({ syncHistory }); };
+      const showToast = (message) => { const el = document.getElementById('toast'); el.textContent = message; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2200); };
+      const updateRoles = (next) => { clientRoles = next; save(); };
+      function hydrateRoles(serverRoles) {
+        roleStateHydrated = true;
+        if (serverRoles && typeof serverRoles === 'object' && Object.keys(serverRoles).length) {
+          clientRoles = Object.fromEntries(Object.entries(serverRoles).map(([id, role]) => [id, normalizeRole(id, role)]));
+          activeRoleId = clientRoles[activeRoleId] ? activeRoleId : Object.keys(clientRoles)[0];
+          currentSkillId = null;
+          renderRole();
+          selectSkill(activeRole()?.skills[0]?.id || null);
+          try { localStorage.setItem(roleStorageKey, JSON.stringify(clientRoles)); } catch { /* 本地缓存不可用时继续使用服务端状态 */ }
+          return;
+        }
+        persistRoles();
+      }
+      window.addEventListener('skill-studio-state-loaded', event => {
+        const remoteHistory = event.detail?.syncHistory;
+        if (Array.isArray(remoteHistory) && remoteHistory.length) {
+          syncHistory = remoteHistory;
+          try { localStorage.setItem(syncHistoryStorageKey, JSON.stringify(syncHistory)); } catch { /* 本地缓存不可用 */ }
+        } else {
+          persistState({ syncHistory });
+        }
+      });
+      const assigned = (id) => activeRole()?.skills.some(item => item.id === id);
+      const attached = (id) => activeRole()?.skills.find(item => item.id === id);
+      const catalogItem = (id) => clientCatalog[id];
+      function setCatalog(skills) {
+        const nextCatalog = Object.fromEntries(skills.map(skill => [skill.id, {
+          title: skill.name,
+          icon: '◌',
+          desc: skill.description,
+          permission: '读取本地文件',
+          usage: skill.source === 'offline-snapshot' ? '离线快照' : '本地 Skill',
+          mode: '按需',
+          content: skill.content || skill.body || '',
+          skill,
+        }]));
+        const idByReference = new Map(skills.flatMap(skill => [[skill.id, skill.id], [skill.name, skill.id]]));
+        const nextRoles = Object.fromEntries(Object.entries(clientRoles).map(([id, role]) => [id, {
+          ...role,
+          skills: role.skills.map(item => {
+            const canonicalId = idByReference.get(item.id) ?? idByReference.get(legacySkillName(item.id));
+            // 认不出来的保留原样：换台电脑时宁可先留着配置，也不要直接删掉。
+            return canonicalId ? { ...item, id: canonicalId } : { ...item };
+          }),
+        }]));
+        clientCatalog = nextCatalog;
+        clientRoles = nextRoles;
+        save();
+        renderRole();
+      }
+      const catalogEntry = (id) => clientCatalog[id] || {};
+      const catalogTitle = (item) => catalogEntry(item.id).title || item.id;
+      const modeLabel = (item) => (item.mode === 'core' ? '核心能力' : '按需调用');
+      // Codex 靠 description 判断要不要加载一个 Skill，所以把能力范围和触发条件一起写进去。
+      const roleAbilitySummary = (role) => {
+        const names = role.skills.map(catalogTitle);
+        if (!names.length) return '本角色当前还没有编排任何子 Skill，请先在客户端里赋予能力。';
+        const shown = names.slice(0, 8).join('、');
+        return `本角色编排了 ${names.length} 项能力：${shown}${names.length > 8 ? ' 等' : ''}。当用户任务涉及这些能力时使用本 Skill。`;
+      };
+      const roleMarkdown = (role) => {
+        const ability = roleAbilitySummary(role);
+        const description = `${(role.description || '').trim()} ${ability}`.trim();
+        const skillLines = role.skills.length
+          ? role.skills.map(item => {
+            const entry = catalogEntry(item.id);
+            const lines = [`- **${catalogTitle(item)}**（${modeLabel(item)}）：${entry.desc || '（暂无说明）'}`];
+            if (entry.skill?.path) lines.push(`  - 文件：\`${shortSkillPath(entry.skill.path)}\``);
+            return lines.join('\n');
+          }).join('\n')
+          : '- 当前还没有赋予子 Skill。';
+        const constraints = (role.defaultConstraints || []).length
+          ? role.defaultConstraints.map(rule => `- ${rule}`).join('\n')
+          : '- 暂无默认规范约束，请在角色设置中补充。';
+        const knowledgeLines = (Array.isArray(role.knowledge) ? role.knowledge : []).map(entry => {
+          const location = entry.type === 'file' ? `knowledge/${entry.file}` : shortSkillPath(entry.path);
+          const kind = entry.type === 'file' ? '随角色附带文件' : '目录';
+          const note = entry.note ? `\n  - ${entry.note}` : '';
+          return `- **${entry.label || entry.file || entry.path}**（${kind}）：\`${location}\`${note}`;
+        }).join('\n');
+        const knowledgeSection = knowledgeLines
+          ? `## 知识库\n\n处理任务前先按需读取下面的来源，以这里的内容为准，不要凭记忆猜：\n\n${knowledgeLines}\n\n`
+          : '';
+        return `---
+name: ${role.invoke.replace('$', '')}
+description: ${description}
+---
+
+# ${role.name}
+
+你是「${role.name}」角色 Skill：理解用户任务，组织下面的子 Skill 完成工作，并汇总可验证的结果。
+
+## 何时使用
+
+- 任务需要下列任一能力时，用本角色 Skill 统筹，并按需读取对应子 Skill 的内容后再动手。
+- 任务与本角色的能力范围无关时，直接说明并正常处理，不要硬套本角色的流程。
+- 不确定该用哪个子 Skill 时，先向用户确认目标，再选择。
+
+## 可调度 Skills
+
+${skillLines}
+
+${knowledgeSection}## 默认规范约束
+
+${constraints}
+
+## 工作方式
+
+1. 先理解用户任务和当前上下文。
+2. 选择相关 Skills，并按合理顺序组织工作。
+3. 说明正在使用的能力和关键判断。
+4. 涉及文件修改或外部操作时遵循权限和确认要求。
+5. 汇总结果、验证方式和剩余风险。
+`;
+      };
+      function renderRoleList() {
+        const list = document.querySelector('.role-list');
+        list.querySelectorAll('.role-entry, .role').forEach(node => node.remove());
+        const add = document.getElementById('newRole');
+        Object.entries(clientRoles).forEach(([id, role]) => {
+          const entry = document.createElement('div');
+          entry.className = 'role-entry';
+          const button = document.createElement('button');
+          button.className = `role${id === activeRoleId ? ' active' : ''}`;
+          button.dataset.role = id;
+          button.innerHTML = `<div class="role-icon">${role.avatar}</div><div class="role-copy"><strong>${role.name}</strong><span>${role.skills.length} 个 Skills · ${role.synced ? '已同步' : '草稿'}</span></div>`;
+          button.addEventListener('click', () => selectRole(id));
+          const removeButton = document.createElement('button');
+          removeButton.type = 'button';
+          removeButton.className = 'role-remove';
+          removeButton.setAttribute('aria-label', `删除角色 ${role.name}`);
+          removeButton.title = '删除角色';
+          removeButton.textContent = '×';
+          removeButton.addEventListener('click', event => { event.stopPropagation(); deleteRole(id); });
+          entry.append(button, removeButton);
+          list.insertBefore(entry, add);
+        });
+      }
+      function renderRole() {
+        const role = activeRole();
+        if (!role) return;
+        document.getElementById('canvasTitle').textContent = role.name;
+        document.getElementById('personName').textContent = role.name;
+        document.getElementById('personAvatar').textContent = role.avatar;
+        document.getElementById('personConstraintSummary').textContent = `默认规范 · ${(role.defaultConstraints || []).length} 条`;
+        document.getElementById('syncText').textContent = role.synced ? '已同步到 Codex · 刚刚' : '尚未同步到 Codex';
+        const invokeInput = document.getElementById('invokeInput');
+        if (invokeInput) invokeInput.value = role.invoke;
+        document.getElementById('legendCount').textContent = `${role.skills.length} 个真实 Skills · ${Object.keys(clientCatalog).length ? '本地已加载' : '等待扫描'}`;
+        renderRoleList();
+        renderKnowledge();
+        window.dispatchEvent(new CustomEvent('skill-studio-role-rendered'));
+      }
+      function selectRole(id) { activeRoleId = id; renderRole(); selectSkill(activeRole().skills[0]?.id || null); showToast(`已切换到「${activeRole().name}」`); }
+      let pendingRoleDeleteId = null;
+      function deleteRole(id) { openRoleDeleteConfirm(id); }
+      function openRoleDeleteConfirm(id) {
+        const role = clientRoles[id];
+        if (!role) return;
+        if (Object.keys(clientRoles).length <= 1) { showToast('至少保留一个角色'); return; }
+        pendingRoleDeleteId = id;
+        document.getElementById('deleteRoleSyncFile').checked = true;
+        const name = document.createElement('strong');
+        name.textContent = `「${role.name}」`;
+        document.getElementById('roleDeleteMessage').replaceChildren('确定删除角色', name, '吗？此操作不可恢复。');
+        document.getElementById('roleDeleteConfirm').classList.remove('hidden');
+        document.getElementById('roleDeleteCancel').focus();
+      }
+      function closeRoleDeleteConfirm() {
+        pendingRoleDeleteId = null;
+        document.getElementById('roleDeleteConfirm').classList.add('hidden');
+      }
+      async function submitRoleDelete() {
+        const id = pendingRoleDeleteId;
+        const role = id ? clientRoles[id] : null;
+        const alsoRemoveSynced = document.getElementById('deleteRoleSyncFile').checked;
+        closeRoleDeleteConfirm();
+        if (!role) return;
+        const nextRoles = Object.fromEntries(Object.entries(clientRoles).filter(([roleId]) => roleId !== id));
+        activeRoleId = activeRoleId === id ? Object.keys(nextRoles)[0] : activeRoleId;
+        updateRoles(nextRoles);
+        renderRole();
+        selectSkill(activeRole().skills[0]?.id || null);
+        if (!alsoRemoveSynced || !['http:', 'https:'].includes(location.protocol)) {
+          showToast(`已删除角色「${role.name}」`);
+          return;
+        }
+        try {
+          const response = await fetch(`/api/roles/${encodeURIComponent(id)}/sync`, { method: 'DELETE' });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || '清理失败');
+          showToast(result.removed ? `已删除角色「${role.name}」和已同步的文件` : `已删除角色「${role.name}」（没有找到已同步的文件）`);
+        } catch (error) {
+          showToast(`角色已删除，但清理同步文件失败：${error.message}`);
+        }
+      }
+      function selectSkill(id) {
+        currentSkillId = id;
+        window.dispatchEvent(new CustomEvent('skill-studio-skill-selected', { detail: { id } }));
+        document.querySelectorAll('.skill-node').forEach(node => node.classList.toggle('selected', node.dataset.skill === id));
+        const item = catalogItem(id);
+        if (!item) {
+          currentSkillId = null;
+          document.getElementById('inspectorIcon').textContent = '◌';
+          document.getElementById('inspectorTitle').textContent = '尚未选择 Skill';
+          document.getElementById('inspectorDesc').textContent = '当前角色还没有可展示的真实本地 Skill。';
+          document.getElementById('inspectorPermission').textContent = '—';
+          document.getElementById('inspectorUsage').textContent = '—';
+          document.getElementById('contentPath').textContent = '尚未选择 SKILL.md';
+          document.getElementById('skillContent').textContent = '请从本地 Skill 库选择一个真实的 SKILL.md。';
+          showDetailTab('overview');
+          return;
+        }
+        const mode = attached(id)?.mode || item.mode;
+        document.getElementById('inspectorIcon').textContent = item.icon;
+        document.getElementById('inspectorTitle').textContent = item.title;
+        document.getElementById('inspectorDesc').textContent = item.desc;
+        document.getElementById('inspectorPermission').textContent = item.permission;
+        document.getElementById('inspectorUsage').textContent = item.usage;
+        document.getElementById('contentPath').textContent = `skills/${id}/SKILL.md`;
+        document.getElementById('skillContent').textContent = item.content || '该 Skill 暂无可预览内容。';
+        document.getElementById('skillEditor').value = item.content || '';
+        document.querySelectorAll('.segmented button').forEach(button => button.classList.toggle('active', button.textContent === (mode === 'core' || mode === '核心' ? '核心' : '按需')));
+        showDetailTab('overview');
+      }
+      function addSkill() {
+        const next = Object.keys(clientCatalog).find(id => !assigned(id));
+        if (!next) { window.dispatchEvent(new CustomEvent('skill-studio-open-picker')); return; }
+        const role = activeRole();
+        updateRoles({ ...clientRoles, [activeRoleId]: { ...role, synced: false, skills: [...role.skills, { id: next, mode: 'on_demand' }] } });
+        renderRole(); selectSkill(next); showToast(`已将「${clientCatalog[next].title}」赋予给${role.name}`);
+      }
+      function attachSkill(skillId) {
+        const role = activeRole();
+        if (!role || role.skills.some(item => item.id === skillId)) return;
+        updateRoles({ ...clientRoles, [activeRoleId]: { ...role, synced: false, skills: [...role.skills, { id: skillId, mode: 'on_demand' }] } });
+        renderRole();
+      }
+      function removeSkill(skillId = currentSkillId) {
+        if (!skillId) return;
+        const role = activeRole();
+        updateRoles({ ...clientRoles, [activeRoleId]: { ...role, synced: false, skills: role.skills.filter(item => item.id !== skillId) } });
+        renderRole(); selectSkill(activeRole().skills[0]?.id || null); showToast('Skill 已从当前角色移除');
+      }
+      function setSkillPosition(skillId, position) {
+        const role = activeRole();
+        const x = Math.round(Number(position?.x));
+        const y = Math.round(Number(position?.y));
+        if (!role || !attached(skillId) || !Number.isFinite(x) || !Number.isFinite(y)) return;
+        const skills = role.skills.map(item => item.id === skillId
+          ? { ...item, position: { x, y } }
+          : { ...item });
+        updateRoles({ ...clientRoles, [activeRoleId]: { ...role, synced: false, skills } });
+        renderRole();
+      }
+      function updateMode(mode) {
+        const role = activeRole();
+        if (!attached(currentSkillId)) return;
+        updateRoles({ ...clientRoles, [activeRoleId]: { ...role, synced: false, skills: role.skills.map(item => item.id === currentSkillId ? { ...item, mode } : { ...item }) } });
+        renderRole(); selectSkill(currentSkillId); showToast(`已切换为${mode === 'core' ? '核心' : '按需'}技能`);
+      }
+      function normalizeConstraints(value) {
+        return [...new Set(String(value || '').split(/\r?\n/).map(rule => rule.trim()).filter(Boolean))].slice(0, 12).map(rule => rule.slice(0, 240));
+      }
+      const knowledgeIcon = (entry) => (entry.type === 'file' ? '📄' : '📁');
+      const knowledgeLocation = (entry) => (entry.type === 'file' ? `已上传：${entry.file}` : entry.path);
+      const saveKnowledgeEntries = (entries) => {
+        const role = activeRole();
+        if (!role) return;
+        updateRoles({ ...clientRoles, [activeRoleId]: { ...role, knowledge: entries, synced: false } });
+        renderKnowledge();
+      };
+      const updateKnowledgeEntry = (id, patch) => {
+        const role = activeRole();
+        saveKnowledgeEntries((role.knowledge || []).map(entry => (entry.id === id ? { ...entry, ...patch } : { ...entry })));
+      };
+      const removeKnowledgeEntry = (id) => {
+        const role = activeRole();
+        const entry = (role.knowledge || []).find(item => item.id === id);
+        saveKnowledgeEntries((role.knowledge || []).filter(item => item.id !== id));
+        // 上传的文件在客户端数据目录里留了副本，移除条目时一并清掉。
+        if (entry?.type === 'file' && entry.file && ['http:', 'https:'].includes(location.protocol)) {
+          fetch(`/api/knowledge/${encodeURIComponent(activeRoleId)}/files/${encodeURIComponent(entry.file)}`, { method: 'DELETE' }).catch(() => {});
+        }
+        showToast('已移除知识来源');
+      };
+      const renderKnowledge = () => {
+        const list = document.getElementById('knowledgeList');
+        const role = activeRole();
+        if (!list || !role) return;
+        const entries = Array.isArray(role.knowledge) ? role.knowledge : [];
+        document.getElementById('knowledgeHint').textContent = entries.length ? `共 ${entries.length} 个来源` : '';
+        list.replaceChildren();
+        if (!entries.length) {
+          const empty = document.createElement('div');
+          empty.className = 'knowledge-empty';
+          empty.textContent = '还没有知识来源。可以指定一个目录，或者直接上传文件。';
+          list.append(empty);
+          return;
+        }
+        entries.forEach(entry => {
+          const row = document.createElement('div');
+          row.className = 'knowledge-row';
+          const icon = document.createElement('span');
+          icon.className = 'knowledge-icon';
+          icon.textContent = knowledgeIcon(entry);
+          const copy = document.createElement('div');
+          copy.className = 'knowledge-copy';
+          const name = document.createElement('input');
+          name.type = 'text';
+          name.className = 'knowledge-name';
+          name.value = entry.label || '';
+          name.placeholder = '名称';
+          name.addEventListener('change', () => updateKnowledgeEntry(entry.id, { label: name.value.trim() }));
+          const note = document.createElement('input');
+          note.type = 'text';
+          note.className = 'knowledge-note';
+          note.value = entry.note || '';
+          note.placeholder = '说明（可选）：告诉 Codex 以这里的什么内容为准';
+          note.addEventListener('change', () => updateKnowledgeEntry(entry.id, { note: note.value.trim() }));
+          const location = document.createElement('span');
+          location.className = 'knowledge-path';
+          location.textContent = knowledgeLocation(entry);
+          copy.append(name, note, location);
+          const remove = document.createElement('button');
+          remove.type = 'button';
+          remove.className = 'knowledge-remove';
+          remove.textContent = '移除';
+          remove.addEventListener('click', () => removeKnowledgeEntry(entry.id));
+          row.append(icon, copy, remove);
+          list.append(row);
+        });
+      };
+      const uploadKnowledgeFiles = async (fileList) => {
+        const files = Array.from(fileList || []);
+        if (!files.length) return;
+        if (!['http:', 'https:'].includes(location.protocol)) { showToast('离线预览模式不能上传文件'); return; }
+        let uploaded = 0;
+        for (const file of files) {
+          try {
+            const response = await fetch(`/api/knowledge/${encodeURIComponent(activeRoleId)}/files?name=${encodeURIComponent(file.name)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/octet-stream' },
+              body: file,
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || '上传失败');
+            const role = activeRole();
+            const entry = { id: `k-${Date.now()}-${uploaded}`, type: 'file', label: file.name, file: result.name, size: result.size, note: '' };
+            updateRoles({ ...clientRoles, [activeRoleId]: { ...role, knowledge: [...(role.knowledge || []), entry], synced: false } });
+            uploaded += 1;
+          } catch (error) {
+            showToast(`「${file.name}」上传失败：${error.message}`);
+          }
+        }
+        renderKnowledge();
+        if (uploaded) showToast(`已上传 ${uploaded} 个文件`);
+      };
+      const openKnowledge = () => {
+        document.getElementById('knowledgeDirForm').classList.add('hidden');
+        document.getElementById('knowledgeModal').classList.remove('hidden');
+        renderKnowledge();
+      };
+      const closeKnowledge = () => document.getElementById('knowledgeModal').classList.add('hidden');
+      function openRoleSettings() {
+        const role = activeRole();
+        if (!role) return;
+        document.getElementById('roleSettingsTitle').textContent = `${role.name} · 默认设置`;
+        document.getElementById('roleSettingsDescription').textContent = '为当前角色设置默认规范约束，后续执行任务时优先遵循。';
+        const textarea = document.getElementById('roleConstraints');
+        textarea.value = (role.defaultConstraints || []).join('\n');
+        document.getElementById('roleSettings').classList.remove('hidden');
+        textarea.focus();
+      }
+      function closeRoleSettings() { document.getElementById('roleSettings').classList.add('hidden'); }
+      // 本地 Skill 库弹框由库脚本负责渲染，这里只负责转达打开请求。
+      function openSkillLibrary() { window.dispatchEvent(new CustomEvent('skill-studio-open-library')); }
+      function renderSyncHistory() {
+        const list = document.getElementById('syncHistoryList');
+        if (!list) return;
+        list.replaceChildren();
+        const entries = syncHistory.length ? syncHistory : Object.entries(clientRoles).filter(([, role]) => role.synced).map(([roleId, role]) => ({ roleId, roleName: role.name, invoke: role.invoke, timestamp: '当前状态' }));
+        if (!entries.length) {
+          const empty = document.createElement('div');
+          empty.className = 'sync-history-empty';
+          empty.textContent = '暂无同步记录';
+          list.append(empty);
+          return;
+        }
+        entries.forEach(entry => {
+          const row = document.createElement('div');
+          row.className = 'sync-history-item';
+          const copy = document.createElement('div');
+          const name = document.createElement('strong');
+          name.textContent = entry.roleName || entry.roleId;
+          const detail = document.createElement('span');
+          detail.textContent = `${entry.invoke || ''} · ${entry.timestamp || '未知时间'}`;
+          copy.append(name, detail);
+          const status = document.createElement('span');
+          status.className = 'sync-history-status';
+          status.textContent = '已同步';
+          row.append(copy, status);
+          list.append(row);
+        });
+      }
+      function openSyncHistory() { renderSyncHistory(); document.getElementById('syncHistory').classList.remove('hidden'); }
+      function closeSyncHistory() { document.getElementById('syncHistory').classList.add('hidden'); }
+      function syncRole() {
+        const role = activeRole();
+        if (!role) return;
+        syncHistory = [{ roleId: activeRoleId, roleName: role.name, invoke: role.invoke, timestamp: new Date().toLocaleString('zh-CN') }, ...syncHistory].slice(0, 20);
+        saveSyncHistory();
+        updateRoles({ ...clientRoles, [activeRoleId]: { ...role, synced: true } });
+        renderRole();
+        showToast('角色 Skill 已标记为 Codex 可用');
+      }
+      function saveRoleSettings() {
+        const role = activeRole();
+        if (!role) return;
+        const defaultConstraints = normalizeConstraints(document.getElementById('roleConstraints').value);
+        updateRoles({ ...clientRoles, [activeRoleId]: { ...role, synced: false, defaultConstraints } });
+        renderRole();
+        closeRoleSettings();
+        showToast(`已保存「${role.name}」的默认规范`);
+      }
+      function editContent() { document.getElementById('skillContent').classList.add('hidden'); document.getElementById('skillEditor').classList.add('visible'); document.getElementById('editContent').style.display = 'none'; document.getElementById('saveContent').classList.add('visible'); }
+      function saveContent() { const content = document.getElementById('skillEditor').value; clientCatalog = { ...clientCatalog, [currentSkillId]: { ...clientCatalog[currentSkillId], content } }; document.getElementById('skillContent').textContent = content; document.getElementById('skillContent').classList.remove('hidden'); document.getElementById('skillEditor').classList.remove('visible'); document.getElementById('editContent').style.display = ''; document.getElementById('saveContent').classList.remove('visible'); showToast('SKILL.md 内容已保存到当前客户端'); }
+      // 调用方式统一成 $名字 的形式：去掉多余符号，只保留字母、数字、点、下划线和连字符。
+      const normalizeInvoke = (value) => {
+        const cleaned = String(value ?? '')
+          .replace(/^\$+/, '')
+          .trim()
+          .replace(/[^\p{Letter}\p{Number}._-]+/gu, '-')
+          .replace(/^[-.]+|[-.]+$/g, '');
+        return cleaned ? `$${cleaned}` : '';
+      };
+      const invokeExists = (invoke, exceptRoleId) => Object.entries(clientRoles)
+        .some(([id, role]) => id !== exceptRoleId && role.invoke === invoke);
+      function saveInvoke() {
+        const role = activeRole();
+        const input = document.getElementById('invokeInput');
+        if (!role || !input) return;
+        const normalized = normalizeInvoke(input.value);
+        if (!normalized) { input.value = role.invoke; showToast('调用方式不能为空'); return; }
+        if (invokeExists(normalized, activeRoleId)) { input.value = role.invoke; showToast(`${normalized} 已被其它角色使用`); return; }
+        if (normalized === role.invoke) { showToast('调用方式没有变化'); return; }
+        updateRoles({ ...clientRoles, [activeRoleId]: { ...role, invoke: normalized, synced: false } });
+        renderRole();
+        showToast(`已保存调用方式 ${normalized}`);
+      }
+      async function copyInvoke() {
+        const invoke = activeRole().invoke;
+        let copied = false;
+        try {
+          if (!navigator.clipboard?.writeText) throw new Error('clipboard unavailable');
+          await navigator.clipboard?.writeText(invoke);
+          copied = true;
+        } catch {
+          const textarea = document.createElement('textarea');
+          textarea.value = invoke;
+          textarea.setAttribute('readonly', '');
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          document.body.append(textarea);
+          textarea.select();
+          try { copied = document.execCommand('copy'); } finally { textarea.remove(); }
+        }
+        showToast(copied ? `已复制：${invoke}` : `复制失败，请手动复制：${invoke}`);
+      }
+      const defaultRoleDescription = '负责调度相关 Skills 完成用户任务';
+      function openRoleCreate() {
+        const nameInput = document.getElementById('roleCreateName');
+        document.getElementById('roleCreateDescription').value = defaultRoleDescription;
+        document.getElementById('roleCreateError').textContent = '';
+        document.getElementById('roleCreate').classList.remove('hidden');
+        nameInput.value = '';
+        nameInput.focus();
+      }
+      function closeRoleCreate() { document.getElementById('roleCreate').classList.add('hidden'); }
+      function submitRoleCreate() {
+        const nameInput = document.getElementById('roleCreateName');
+        const descriptionInput = document.getElementById('roleCreateDescription');
+        const error = document.getElementById('roleCreateError');
+        const name = nameInput.value.trim();
+        if (!name) {
+          error.textContent = '请输入角色名称';
+          nameInput.focus();
+          return;
+        }
+        const description = descriptionInput.value.trim() || defaultRoleDescription;
+        const id = `${name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
+        const role = { name, description, avatar: '👤', invoke: `$${id}`, synced: false, defaultConstraints: [], skills: [] };
+        updateRoles({ ...clientRoles, [id]: role });
+        activeRoleId = id;
+        closeRoleCreate();
+        renderRole();
+        selectSkill(null);
+        showToast(`已创建「${role.name}」`);
+      }
+      function exportRole() { const role = activeRole(); const blob = new Blob([roleMarkdown(role)], { type: 'text/markdown;charset=utf-8' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `${role.invoke.replace('$', '')}.SKILL.md`; link.click(); URL.revokeObjectURL(link.href); showToast('角色 Skill 已导出'); }
+      function previewRole() { const role = activeRole(); document.getElementById('roleExportTitle').textContent = `${role.name} · 导出预览`; document.getElementById('roleExportPath').textContent = `${role.invoke.replace('$', '')}.SKILL.md`; document.getElementById('roleExportContent').textContent = roleMarkdown(role); document.getElementById('roleExportPreview').classList.remove('hidden'); }
+      function closeRolePreview() { document.getElementById('roleExportPreview').classList.add('hidden'); }
+      document.querySelectorAll('.skill-node').forEach(node => node.addEventListener('click', () => selectSkill(node.dataset.skill)));
+      document.querySelectorAll('.segmented button').forEach(button => button.addEventListener('click', () => updateMode(button.textContent === '核心' ? 'core' : 'on_demand')));
+      document.getElementById('removeSkill').addEventListener('click', removeSkill);
+      document.getElementById('newRole').addEventListener('click', openRoleCreate);
+      document.getElementById('roleCreateSubmit').addEventListener('click', submitRoleCreate);
+      document.getElementById('roleCreateCancel').addEventListener('click', closeRoleCreate);
+      document.getElementById('roleCreateClose').addEventListener('click', closeRoleCreate);
+      document.getElementById('roleCreate').addEventListener('click', event => { if (event.target.id === 'roleCreate') closeRoleCreate(); });
+      document.getElementById('roleCreate').addEventListener('keydown', event => { if (event.key === 'Escape') closeRoleCreate(); });
+      document.getElementById('roleDeleteSubmit').addEventListener('click', submitRoleDelete);
+      document.getElementById('roleDeleteCancel').addEventListener('click', closeRoleDeleteConfirm);
+      document.getElementById('roleDeleteClose').addEventListener('click', closeRoleDeleteConfirm);
+      document.getElementById('roleDeleteConfirm').addEventListener('click', event => { if (event.target.id === 'roleDeleteConfirm') closeRoleDeleteConfirm(); });
+      document.getElementById('roleDeleteConfirm').addEventListener('keydown', event => { if (event.key === 'Escape') closeRoleDeleteConfirm(); });
+      document.getElementById('editContent').addEventListener('click', editContent);
+      document.getElementById('saveContent').addEventListener('click', saveContent);
+      document.getElementById('exportBtn').addEventListener('click', exportRole);
+      document.getElementById('exportPreviewBtn').addEventListener('click', previewRole);
+      document.getElementById('downloadRoleExport').addEventListener('click', exportRole);
+      document.getElementById('roleExportClose').addEventListener('click', closeRolePreview);
+      document.getElementById('roleExportCancel').addEventListener('click', closeRolePreview);
+      document.getElementById('roleExportPreview').addEventListener('click', event => { if (event.target.id === 'roleExportPreview') closeRolePreview(); });
+      document.getElementById('syncBtn').addEventListener('click', syncRole);
+      document.getElementById('copyInvoke').addEventListener('click', () => copyInvoke());
+      document.getElementById('saveInvoke').addEventListener('click', saveInvoke);
+      document.getElementById('knowledgeBtn').addEventListener('click', openKnowledge);
+      document.getElementById('knowledgeClose').addEventListener('click', closeKnowledge);
+      document.getElementById('knowledgeDone').addEventListener('click', closeKnowledge);
+      document.getElementById('knowledgeModal').addEventListener('click', event => { if (event.target.id === 'knowledgeModal') closeKnowledge(); });
+      document.getElementById('knowledgeModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeKnowledge(); });
+      document.getElementById('addKnowledgeDir').addEventListener('click', () => {
+        const form = document.getElementById('knowledgeDirForm');
+        form.classList.remove('hidden');
+        document.getElementById('knowledgeDirName').value = '';
+        document.getElementById('knowledgeDirPath').value = '';
+        document.getElementById('knowledgeDirNote').value = '';
+        document.getElementById('knowledgeDirName').focus();
+      });
+      document.getElementById('knowledgeDirCancel').addEventListener('click', () => document.getElementById('knowledgeDirForm').classList.add('hidden'));
+      document.getElementById('knowledgeDirConfirm').addEventListener('click', () => {
+        const role = activeRole();
+        if (!role) return;
+        const dirPath = document.getElementById('knowledgeDirPath').value.trim();
+        if (!dirPath) { showToast('请填写目录路径'); document.getElementById('knowledgeDirPath').focus(); return; }
+        const entry = {
+          id: `k-${Date.now()}`,
+          type: 'dir',
+          label: document.getElementById('knowledgeDirName').value.trim() || dirPath,
+          path: dirPath,
+          note: document.getElementById('knowledgeDirNote').value.trim(),
+        };
+        updateRoles({ ...clientRoles, [activeRoleId]: { ...role, knowledge: [...(role.knowledge || []), entry], synced: false } });
+        document.getElementById('knowledgeDirForm').classList.add('hidden');
+        renderKnowledge();
+        showToast('已添加知识目录');
+      });
+      document.getElementById('uploadKnowledgeFile').addEventListener('click', () => document.getElementById('knowledgeFileInput').click());
+      document.getElementById('knowledgeFileInput').addEventListener('change', event => {
+        uploadKnowledgeFiles(event.target.files);
+        event.target.value = '';
+      });
+      document.getElementById('invokeInput').addEventListener('keydown', event => {
+        if (event.key === 'Enter') { event.preventDefault(); saveInvoke(); }
+        if (event.key === 'Escape') { event.preventDefault(); event.target.value = activeRole().invoke; }
+      });
+      document.getElementById('rolePerson').addEventListener('click', openRoleSettings);
+      document.getElementById('roleSettingsClose').addEventListener('click', closeRoleSettings);
+      document.getElementById('roleSettingsCancel').addEventListener('click', closeRoleSettings);
+      document.getElementById('roleSettingsSave').addEventListener('click', saveRoleSettings);
+      document.getElementById('roleSettings').addEventListener('click', event => { if (event.target.id === 'roleSettings') closeRoleSettings(); });
+      document.getElementById('skillLibraryNav').addEventListener('click', openSkillLibrary);
+      document.getElementById('syncHistoryNav').addEventListener('click', openSyncHistory);
+      document.getElementById('settingsNav').addEventListener('click', openRoleSettings);
+      document.getElementById('syncHistoryClose').addEventListener('click', closeSyncHistory);
+      document.getElementById('syncHistoryCancel').addEventListener('click', closeSyncHistory);
+      document.getElementById('syncHistory').addEventListener('click', event => { if (event.target.id === 'syncHistory') closeSyncHistory(); });
+      document.getElementById('addSkillBtn').addEventListener('click', () => window.dispatchEvent(new CustomEvent('skill-studio-open-picker')));
+      renderRole(); selectSkill(activeRole().skills[0]?.id || null);
+      window.skillStudio = { selectSkill, renderRole, addSkill, attachSkill, removeSkill, setSkillPosition, setCatalog, hydrateRoles, persistState, getState: () => ({ id: activeRoleId, role: { ...activeRole(), defaultConstraints: [...(activeRole().defaultConstraints || [])], skills: activeRole().skills.map(item => ({ ...item, position: item.position ? { ...item.position } : undefined })) }, markdown: roleMarkdown(activeRole()) }) };
+    })();
+  </script>
+  <script>
+    (() => {
+      const count = document.getElementById('localCount');
+      const status = document.getElementById('localStatus');
+      const list = document.getElementById('localSkillList');
+      const localSkillSearch = document.getElementById('localSkillSearch');
+      let localSkills = [];
+      let localSearchQuery = '';
+      const cacheKey = 'skill-studio-local-skills-v1';
+      const offlineSkills = Array.isArray(window.SKILL_STUDIO_OFFLINE_SKILLS) ? window.SKILL_STUDIO_OFFLINE_SKILLS : [];
+      const picker = document.getElementById('skillPicker');
+      const pickerList = document.getElementById('pickerList');
+      const pickerSearch = document.getElementById('pickerSearch');
+      const aliasStorageKey = 'skill-studio-aliases-v1';
+      const defaultSkillAliases = {
+        'agent-introspection-debugging': '智能体故障自检',
+        'agent-sort': 'Skill 分类整理',
+        'api-design': 'API 接口设计',
+        'article-writing': '长文写作',
+        'backend-patterns': '后端架构模式',
+        'benchmark-methodology': '竞品评测方法',
+        'brand-discovery': '品牌定位探索',
+        'brand-voice': '品牌语调构建',
+        'bun-runtime': 'Bun 运行时',
+        'coding-standards': '编码规范',
+        'competitive-platform-analysis': '竞品平台分析',
+        'competitive-report-structure': '竞品报告结构',
+        'computer-use': '电脑操作',
+        'content-engine': '内容生产引擎',
+        'crosspost': '多平台内容分发',
+        'deep-research': '深度研究',
+        'dmux-workflows': '多智能体并行工作流',
+        'documentation-lookup': '技术文档查询',
+        'e2e-testing': '端到端测试',
+        'eval-harness': '评测执行框架',
+        'everything-claude-code': 'ECC 开发规范',
+        'exa-search': 'Exa 智能搜索',
+        'fal-ai-media': 'AI 媒体生成',
+        'find-skills': 'Skill 发现与安装',
+        'frontend-patterns': '前端开发模式',
+        'frontend-slides': '前端幻灯片',
+        'imagegen': '图片生成',
+        'investor-materials': '投资人材料',
+        'investor-outreach': '投资人沟通',
+        'market-research': '市场研究',
+        'mcp-server-patterns': 'MCP 服务开发',
+        'mle-workflow': '机器学习工程流程',
+        'nextjs-turbopack': 'Next.js 构建优化',
+        'openai-docs': 'OpenAI 官方文档',
+        'orca-cli': 'Orca 命令行',
+        'orchestration': '多智能体编排',
+        'plan-canvas': '计划画布',
+        'product-capability': '产品能力拆解',
+        'resolve-conflicts': '冲突解决',
+        'review-agent': '代码审查代理',
+        'security-review': '安全审查',
+        'skill-creator': 'Skill 创建器',
+        'skill-installer': 'Skill 安装器',
+        'strategic-compact': '上下文压缩',
+        'tdd-workflow': '测试驱动开发',
+        'unified-memory': '统一记忆',
+        'verification-loop': '验证闭环',
+        'video-editing': '视频编辑',
+        'x-api': 'X 平台集成',
+      };
+      const readAliases = () => {
+        try {
+          const saved = JSON.parse(localStorage.getItem(aliasStorageKey) || '{}');
+          return saved && typeof saved === 'object' ? saved : {};
+        } catch {
+          return {};
+        }
+      };
+      let skillAliases = readAliases();
+      // 换台电脑后 Skill 的 id 会变，别名要跟着迁移到新 id 上。
+      const remapAliases = (skills) => {
+        const byName = new Map(skills.map(skill => [skill.name, skill.id]));
+        const byId = new Set(skills.map(skill => skill.id));
+        let changed = false;
+        const next = {};
+        Object.entries(skillAliases).forEach(([key, value]) => {
+          if (byId.has(key)) { next[key] = value; return; }
+          const matched = byName.get(legacySkillName(key));
+          if (matched) { next[matched] = value; changed = true; return; }
+          next[key] = value;
+        });
+        if (!changed) return;
+        skillAliases = next;
+        try { localStorage.setItem(aliasStorageKey, JSON.stringify(skillAliases)); } catch { /* 本地缓存不可用 */ }
+        window.skillStudio?.persistState?.({ skillAliases });
+      };
+      window.addEventListener('skill-studio-state-loaded', event => {
+        const remoteAliases = event.detail?.skillAliases;
+        if (remoteAliases && typeof remoteAliases === 'object' && Object.keys(remoteAliases).length) {
+          skillAliases = { ...remoteAliases };
+          try { localStorage.setItem(aliasStorageKey, JSON.stringify(skillAliases)); } catch { /* 本地缓存不可用 */ }
+        } else if (Object.keys(skillAliases).length) {
+          window.skillStudio?.persistState?.({ skillAliases });
+        }
+      });
+      let selectedSkillId = null;
+      const getSkillAlias = (skill) => skill ? (skillAliases[skill.id] || defaultSkillAliases[skill.name] || (/^[^\u4e00-\u9fff]*[\u4e00-\u9fff]/.test(skill.name) ? skill.name : '')) : '';
+      const getSkillDisplayName = (skill) => getSkillAlias(skill) || skill?.name || '未命名 Skill';
+      const getSkillDescription = (skill) => {
+        const alias = getSkillAlias(skill);
+        return alias && alias !== skill.name ? `${skill.name} · ${skill.description}` : skill.description;
+      };
+      const renderAliasEditor = (skill) => {
+        const input = document.getElementById('skillAlias');
+        const saveButton = document.getElementById('saveSkillAlias');
+        if (!input || !saveButton) return;
+        const enabled = Boolean(skill);
+        input.disabled = !enabled;
+        saveButton.disabled = !enabled;
+        input.value = enabled ? getSkillAlias(skill) : '';
+      };
+      const showDetailContent = (skill, content) => {
+        window.skillStudio?.selectSkill(skill.id);
+        document.getElementById('inspectorIcon').textContent = '◌';
+        document.getElementById('inspectorTitle').textContent = getSkillDisplayName(skill);
+        document.getElementById('inspectorDesc').textContent = getSkillDescription(skill);
+        document.getElementById('inspectorPermission').textContent = '读取本地文件';
+        document.getElementById('inspectorUsage').textContent = '本地 Skill';
+        document.getElementById('contentPath').textContent = skill.path;
+        document.getElementById('skillContent').textContent = content;
+        document.getElementById('skillContent').classList.remove('hidden');
+        document.getElementById('skillEditor').classList.remove('visible');
+        document.getElementById('editContent').style.display = 'none';
+        document.getElementById('saveContent').classList.remove('visible');
+        document.querySelector('[data-detail-tab="content"]').click();
+      };
+      const openSkill = async (skill) => {
+        if (skill.content || skill.body) {
+          showDetailContent(skill, skill.content || skill.body);
+          return;
+        }
+        if (skill.source === 'offline-snapshot') {
+          showDetailContent(skill, `离线快照仅保存了真实 Skill 的元数据。\n\n文件位置：${skill.path}\n\n启动本地服务后刷新，可读取该文件的完整 SKILL.md 内容。`);
+          return;
+        }
+        try {
+          const response = await fetch(`/api/skills/${encodeURIComponent(skill.id)}`);
+          if (!response.ok) throw new Error('读取失败');
+          const payload = await response.json();
+          showDetailContent(payload.skill, payload.content);
+        } catch {
+          status.textContent = '读取 Skill 内容失败，请确认本地服务仍在运行。';
+        }
+      };
+      const renderLibrary = (skills, query = localSearchQuery) => {
+        const normalizedQuery = query.trim().toLowerCase();
+        const filteredSkills = skills.filter(skill => `${getSkillDisplayName(skill)} ${skill.name} ${getSkillDescription(skill)}`.toLowerCase().includes(normalizedQuery));
+        const assignedIds = new Set(window.skillStudio?.getState?.().role.skills.map(item => item.id) || []);
+        list.replaceChildren();
+        if (!filteredSkills.length) {
+          const empty = document.createElement('div');
+          empty.className = 'library-empty';
+          empty.textContent = '没有匹配的 Skill';
+          list.append(empty);
+          return;
+        }
+        const visibleIds = new Set(filteredSkills.map(skill => skill.id));
+        skills.forEach(skill => {
+          if (!visibleIds.has(skill.id)) return;
+          const row = document.createElement('div');
+          row.className = 'local-skill-row';
+          const openButton = document.createElement('button');
+          openButton.className = 'local-skill';
+          const copy = document.createElement('span');
+          copy.className = 'local-skill-copy';
+          const name = document.createElement('strong');
+          const description = document.createElement('span');
+          const viewAction = document.createElement('em');
+          name.textContent = getSkillDisplayName(skill);
+          description.textContent = getSkillDescription(skill);
+          viewAction.textContent = '查看';
+          copy.append(name, description);
+          openButton.append(copy, viewAction);
+          openButton.addEventListener('click', () => openSkill(skill));
+          const addButton = document.createElement('button');
+          addButton.className = 'local-skill-add';
+          const isAssigned = assignedIds.has(skill.id);
+          const action = isAssigned ? '已赋予' : '赋予';
+          addButton.textContent = action;
+          addButton.disabled = isAssigned;
+          if (!isAssigned) {
+            addButton.addEventListener('click', () => {
+              window.skillStudio?.attachSkill(skill.id);
+              openSkill(skill);
+            });
+          }
+          row.append(openButton, addButton);
+          list.append(row);
+        });
+      };
+      const renderPicker = (query = '') => {
+        const normalizedQuery = query.trim().toLowerCase();
+        const assignedIds = new Set(window.skillStudio?.getState?.().role.skills.map(item => item.id) || []);
+        const filtered = localSkills.filter(skill => `${getSkillDisplayName(skill)} ${skill.name} ${getSkillDescription(skill)}`.toLowerCase().includes(normalizedQuery));
+        pickerList.replaceChildren();
+        if (!filtered.length) {
+          const empty = document.createElement('div');
+          empty.className = 'picker-empty';
+          empty.textContent = '没有匹配的本地 Skill';
+          pickerList.append(empty);
+          return;
+        }
+        filtered.forEach(skill => {
+          const button = document.createElement('button');
+          button.className = 'picker-item';
+          button.disabled = assignedIds.has(skill.id);
+          const copy = document.createElement('span');
+          const name = document.createElement('strong');
+          const description = document.createElement('span');
+          const action = document.createElement('em');
+          name.textContent = getSkillDisplayName(skill);
+          description.textContent = getSkillDescription(skill);
+          action.textContent = button.disabled ? '已赋予' : '赋予';
+          copy.append(name, description);
+          button.append(copy, action);
+          button.addEventListener('click', () => {
+            window.skillStudio?.attachSkill(skill.id);
+            openSkill(skill);
+          });
+          pickerList.append(button);
+        });
+      };
+      const openPicker = () => { picker.classList.remove('hidden'); pickerSearch.value = ''; renderPicker(); pickerSearch.focus(); };
+      const closePicker = () => picker.classList.add('hidden');
+      const libraryView = document.getElementById('skillLibraryView');
+      const libraryViewList = document.getElementById('libraryViewList');
+      const libraryViewSearch = document.getElementById('libraryViewSearch');
+      const libraryViewCount = document.getElementById('libraryViewCount');
+      const renderSkillLibraryView = () => {
+        const query = libraryViewSearch.value.trim().toLowerCase();
+        const state = window.skillStudio?.getState?.();
+        const assignedIds = new Set(state?.role.skills.map(item => item.id) || []);
+        const filtered = localSkills.filter(skill => `${getSkillDisplayName(skill)} ${skill.name} ${getSkillDescription(skill)}`.toLowerCase().includes(query));
+
+        libraryViewCount.textContent = query
+          ? `匹配 ${filtered.length} 个，共 ${localSkills.length} 个本地 Skill`
+          : `共 ${localSkills.length} 个本地 Skill · 当前角色：${state?.role.name || '—'}`;
+
+        libraryViewList.replaceChildren();
+        if (!filtered.length) {
+          const empty = document.createElement('div');
+          empty.className = 'picker-empty';
+          empty.textContent = localSkills.length ? '没有匹配的 Skill' : '还没有扫描到本地 Skill';
+          libraryViewList.append(empty);
+          return;
+        }
+
+        filtered.forEach(skill => {
+          const assigned = assignedIds.has(skill.id);
+          const row = document.createElement('div');
+          row.className = `library-view-row${assigned ? ' assigned' : ''}`;
+
+          const copy = document.createElement('div');
+          copy.className = 'library-view-copy';
+          const name = document.createElement('strong');
+          name.textContent = getSkillDisplayName(skill);
+          const description = document.createElement('span');
+          description.textContent = getSkillDescription(skill);
+          copy.append(name, description);
+
+          const actions = document.createElement('div');
+          actions.className = 'library-view-actions';
+          const openButton = document.createElement('button');
+          openButton.type = 'button';
+          openButton.className = 'outline';
+          openButton.textContent = '查看';
+          openButton.addEventListener('click', () => openSkill(skill));
+          actions.append(openButton);
+
+          if (assigned) {
+            const stateTag = document.createElement('span');
+            stateTag.className = 'library-view-state';
+            stateTag.textContent = '已赋予';
+            actions.append(stateTag);
+          } else {
+            const assignButton = document.createElement('button');
+            assignButton.type = 'button';
+            assignButton.className = 'primary';
+            assignButton.textContent = '赋予当前角色';
+            assignButton.addEventListener('click', () => window.skillStudio?.attachSkill(skill.id));
+            actions.append(assignButton);
+          }
+
+          row.append(copy, actions);
+          libraryViewList.append(row);
+        });
+      };
+      const openSkillLibraryView = () => {
+        libraryView.classList.remove('hidden');
+        libraryViewSearch.value = '';
+        renderSkillLibraryView();
+        libraryViewSearch.focus();
+      };
+      const closeSkillLibraryView = () => libraryView.classList.add('hidden');
+      window.addEventListener('skill-studio-open-library', openSkillLibraryView);
+      window.addEventListener('skill-studio-role-rendered', () => {
+        if (!libraryView.classList.contains('hidden')) renderSkillLibraryView();
+      });
+      libraryViewSearch.addEventListener('input', renderSkillLibraryView);
+      document.getElementById('skillLibraryClose').addEventListener('click', closeSkillLibraryView);
+      document.getElementById('skillLibraryCloseFooter').addEventListener('click', closeSkillLibraryView);
+      libraryView.addEventListener('click', event => { if (event.target === libraryView) closeSkillLibraryView(); });
+      libraryView.addEventListener('keydown', event => { if (event.key === 'Escape') closeSkillLibraryView(); });
+      const renderDynamicGraphNodes = () => {
+        const stage = document.querySelector('.orbit-stage');
+        if (!stage) return;
+        stage.querySelectorAll('.dynamic-local-node').forEach(node => node.remove());
+        const state = window.skillStudio?.getState?.();
+        if (!state) return;
+        const dynamicSkills = state.role.skills;
+        const empty = document.getElementById('graphEmpty');
+        empty.classList.toggle('hidden', dynamicSkills.length > 0);
+        const nodesPerRing = 8;
+        const baseRadius = 214;
+        const ringGap = 82;
+        const maxRing = Math.floor(Math.max(dynamicSkills.length - 1, 0) / nodesPerRing);
+        const defaultMaxRadius = baseRadius + maxRing * ringGap;
+        const customMaxRadius = dynamicSkills.reduce((max, item) => {
+          const x = Number(item.position?.x);
+          const y = Number(item.position?.y);
+          return Number.isFinite(x) && Number.isFinite(y) ? Math.max(max, Math.abs(x), Math.abs(y)) : max;
+        }, 0);
+        const maxRadius = Math.max(defaultMaxRadius, customMaxRadius);
+        stage.style.minWidth = '';
+        const availableWidth = stage.clientWidth;
+        const requiredWidth = (maxRadius + 56) * 2;
+        if (requiredWidth > availableWidth) stage.style.minWidth = `${requiredWidth}px`;
+        stage.style.height = `${Math.max(560, (maxRadius + 44) * 2)}px`;
+        const viewport = stage.parentElement;
+        if (viewport) viewport.scrollLeft = Math.max(0, (viewport.scrollWidth - viewport.clientWidth) / 2);
+        dynamicSkills.forEach((item, index) => {
+          const skill = localSkills.find(candidate => candidate.id === item.id);
+          if (!skill) return;
+          const skillName = getSkillDisplayName(skill);
+          const skillIcon = '◌';
+          const ring = Math.floor(index / nodesPerRing);
+          const positionInRing = index % nodesPerRing;
+          const ringSize = Math.min(nodesPerRing, dynamicSkills.length - ring * nodesPerRing);
+          const angle = -Math.PI / 2 + (positionInRing / ringSize) * Math.PI * 2;
+          const radius = baseRadius + ring * ringGap;
+          const defaultX = Math.cos(angle) * radius;
+          const defaultY = Math.sin(angle) * radius;
+          const hasCustomPosition = Number.isFinite(Number(item.position?.x)) && Number.isFinite(Number(item.position?.y));
+          const initialX = hasCustomPosition ? Number(item.position.x) : defaultX;
+          const initialY = hasCustomPosition ? Number(item.position.y) : defaultY;
+          const node = document.createElement('div');
+          node.className = `skill-node dynamic-local-node${item.mode === 'core' ? ' core' : ''}`;
+          node.dataset.skill = item.id;
+          node.setAttribute('role', 'group');
+          node.setAttribute('aria-label', `${skillName}，已赋予`);
+          node.title = `${skillName}（${skill.name}）· 拖动调整位置；点击查看详情`;
+          node.style.left = `calc(50% + ${initialX}px - 56px)`;
+          node.style.top = `calc(50% + ${initialY}px - 34px)`;
+          const main = document.createElement('button');
+          main.type = 'button';
+          main.className = 'skill-node-main';
+          main.setAttribute('aria-label', `查看 ${skillName}`);
+          const icon = document.createElement('span');
+          const name = document.createElement('strong');
+          const mode = document.createElement('small');
+          icon.className = 'skill-icon';
+          icon.textContent = skillIcon;
+          name.textContent = skillName;
+          mode.textContent = item.mode === 'core' ? '核心' : skill.source === 'offline-snapshot' ? '离线快照' : '本地';
+          main.append(icon, name, mode);
+          let suppressNextClick = false;
+          let dragState = null;
+          const setNodePosition = (x, y) => {
+            node.style.left = `calc(50% + ${x}px - 56px)`;
+            node.style.top = `calc(50% + ${y}px - 34px)`;
+          };
+          node.addEventListener('pointerdown', event => {
+            if (event.button !== 0 || event.target.closest('.skill-node-remove')) return;
+            node.setPointerCapture?.(event.pointerId);
+            suppressNextClick = false;
+            dragState = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, x: initialX, y: initialY, moved: false, startedOnMain: Boolean(event.target.closest('.skill-node-main')) };
+            node.classList.add('dragging');
+          });
+          node.addEventListener('pointermove', event => {
+            if (!dragState || event.pointerId !== dragState.pointerId) return;
+            const x = dragState.x + event.clientX - dragState.startX;
+            const y = dragState.y + event.clientY - dragState.startY;
+            dragState.moved = dragState.moved || Math.abs(x - dragState.x) > 4 || Math.abs(y - dragState.y) > 4;
+            setNodePosition(x, y);
+            dragState.currentX = x;
+            dragState.currentY = y;
+          });
+          const finishDrag = event => {
+            if (!dragState || event.pointerId !== dragState.pointerId) return;
+            const finished = dragState;
+            dragState = null;
+            node.classList.remove('dragging');
+            if (finished.moved) {
+              suppressNextClick = true;
+              const x = Math.round(finished.currentX ?? finished.x);
+              const y = Math.round(finished.currentY ?? finished.y);
+              window.skillStudio?.setSkillPosition(item.id, { x, y });
+            }
+            if (!finished.moved && finished.startedOnMain) openSkill(skill);
+          };
+          node.addEventListener('pointerup', finishDrag);
+          node.addEventListener('pointercancel', finishDrag);
+          main.addEventListener('click', event => {
+            if (event.detail === 0) openSkill(skill);
+          });
+          const removeButton = document.createElement('button');
+          removeButton.type = 'button';
+          removeButton.className = 'skill-node-remove';
+          removeButton.setAttribute('aria-label', `移除 ${skillName}`);
+          removeButton.title = '移除';
+          removeButton.textContent = '×';
+          removeButton.addEventListener('click', event => {
+            event.stopPropagation();
+            window.skillStudio?.removeSkill(item.id);
+          });
+          node.append(main, removeButton);
+          stage.append(node);
+        });
+      };
+      const renderAssignedList = () => {
+        const container = document.getElementById('skillListView');
+        if (!container) return;
+        const state = window.skillStudio?.getState?.();
+        const assignedSkills = (state?.role.skills || [])
+          .map(item => ({ item, skill: localSkills.find(candidate => candidate.id === item.id) }))
+          .filter(entry => entry.skill);
+        container.replaceChildren();
+        if (!assignedSkills.length) {
+          const empty = document.createElement('div');
+          empty.className = 'assigned-list-empty';
+          empty.textContent = state?.role.skills?.length
+            ? '当前角色的 Skill 尚未加载到本地目录。'
+            : '当前角色还没有赋予 Skill。请从右侧本地 Skill 库中选择。';
+          container.append(empty);
+          return;
+        }
+        assignedSkills.forEach(({ item, skill }) => {
+          const row = document.createElement('div');
+          row.className = 'assigned-skill-row';
+          row.setAttribute('role', 'group');
+          row.setAttribute('aria-label', `${getSkillDisplayName(skill)}，已赋予`);
+          const main = document.createElement('button');
+          main.type = 'button';
+          main.className = 'assigned-skill-main';
+          main.setAttribute('aria-label', `查看 ${getSkillDisplayName(skill)}`);
+          const icon = document.createElement('span');
+          icon.className = 'assigned-skill-icon';
+          icon.textContent = '◌';
+          const copy = document.createElement('span');
+          copy.className = 'assigned-skill-copy';
+          const name = document.createElement('strong');
+          name.textContent = getSkillDisplayName(skill);
+          const description = document.createElement('span');
+          description.textContent = getSkillDescription(skill);
+          copy.append(name, description);
+          const mode = document.createElement('span');
+          mode.className = `assigned-skill-mode${item.mode === 'core' ? ' core' : ''}`;
+          mode.textContent = item.mode === 'core' ? '核心' : '按需';
+          main.append(icon, copy, mode);
+          main.addEventListener('click', () => openSkill(skill));
+          const removeButton = document.createElement('button');
+          removeButton.type = 'button';
+          removeButton.className = 'assigned-skill-remove';
+          removeButton.setAttribute('aria-label', `移除 ${getSkillDisplayName(skill)}`);
+          removeButton.textContent = '移除';
+          removeButton.addEventListener('click', event => {
+            event.stopPropagation();
+            window.skillStudio?.removeSkill(item.id);
+          });
+          row.append(main, removeButton);
+          container.append(row);
+        });
+      };
+      const setView = (view) => {
+        const graphButton = document.getElementById('skillGraphView');
+        const listButton = document.getElementById('skillListViewToggle');
+        const graph = document.querySelector('.orbit-viewport');
+        const list = document.getElementById('skillListView');
+        const isList = view === 'list';
+        graphButton?.classList.toggle('active', !isList);
+        listButton?.classList.toggle('active', isList);
+        if (graph) graph.style.display = isList ? 'none' : '';
+        list?.classList.toggle('visible', isList);
+        if (isList) renderAssignedList();
+      };
+      const saveSkillAlias = () => {
+        const skill = localSkills.find(candidate => candidate.id === selectedSkillId);
+        const input = document.getElementById('skillAlias');
+        if (!skill || !input) return;
+        const alias = input.value.trim().slice(0, 60);
+        if (alias) {
+          skillAliases = { ...skillAliases, [skill.id]: alias };
+        } else {
+          const { [skill.id]: removed, ...remaining } = skillAliases;
+          skillAliases = remaining;
+        }
+        try { localStorage.setItem(aliasStorageKey, JSON.stringify(skillAliases)); } catch { /* file:// 可能禁用 localStorage */ }
+        window.skillStudio?.persistState?.({ skillAliases });
+        renderAliasEditor(skill);
+        renderLibrary(localSkills, localSearchQuery);
+        renderPicker(pickerSearch.value);
+        renderDynamicGraphNodes();
+        renderAssignedList();
+        document.getElementById('inspectorTitle').textContent = getSkillDisplayName(skill);
+        status.textContent = `已保存「${skill.name}」的显示别名。`;
+      };
+      const readCachedSkills = () => {
+        try {
+          const cached = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+          return Array.isArray(cached) ? cached : [];
+        } catch {
+          return [];
+        }
+      };
+      const applySkills = (skills, source, roots = []) => {
+        localSkills = skills.filter(skill => skill?.id && skill?.name).map(skill => ({ ...skill, source: skill.source || source }));
+        try { localStorage.setItem(cacheKey, JSON.stringify(localSkills)); } catch { /* file:// 可能禁用 localStorage */ }
+        count.textContent = `${localSkills.length} 个`;
+        status.textContent = source === 'offline-snapshot'
+          ? `离线快照：${localSkills.length} 个真实 Skill；启动本地服务后可刷新为最新扫描结果。`
+          : `已扫描 ${roots.length} 个 Skill 根目录，共 ${localSkills.length} 个，可滚动查看。`;
+        renderLibrary(localSkills, localSearchQuery);
+        remapAliases(localSkills);
+        window.skillStudio?.setCatalog(localSkills);
+        renderAliasEditor(localSkills.find(skill => skill.id === selectedSkillId));
+        renderPicker();
+        renderDynamicGraphNodes();
+        renderAssignedList();
+      };
+      const loadLocalSkills = async () => {
+        if (!['http:', 'https:'].includes(location.protocol)) {
+          const snapshot = offlineSkills.length ? offlineSkills : readCachedSkills();
+          if (snapshot.length) applySkills(snapshot, 'offline-snapshot');
+          else {
+            count.textContent = '0 个';
+            status.textContent = '离线预览没有 Skill 快照；启动本地服务后可扫描真实 Skill。';
+          }
+          return;
+        }
+        try {
+          const response = await fetch('/api/bootstrap');
+          if (!response.ok) throw new Error('本地服务不可用');
+          const payload = await response.json();
+          window.skillStudio?.hydrateRoles(payload.roles);
+          window.dispatchEvent(new CustomEvent('skill-studio-state-loaded', { detail: payload }));
+          applySkills(payload.skills, 'live', payload.roots);
+        } catch {
+          const fallback = readCachedSkills().length ? readCachedSkills() : offlineSkills;
+          if (fallback.length) applySkills(fallback, 'offline-snapshot');
+          else {
+            count.textContent = '未连接';
+            status.textContent = '未连接到本地 Skill 服务。请运行 npm run client 后刷新页面。';
+          }
+        }
+      };
+      window.addEventListener('skill-studio-open-picker', openPicker);
+      window.addEventListener('skill-studio-skill-selected', event => {
+        selectedSkillId = event.detail?.id || null;
+        const skill = localSkills.find(candidate => candidate.id === selectedSkillId);
+        renderAliasEditor(skill);
+        if (skill) document.getElementById('inspectorTitle').textContent = getSkillDisplayName(skill);
+      });
+      window.addEventListener('skill-studio-role-rendered', renderDynamicGraphNodes);
+      window.addEventListener('skill-studio-role-rendered', renderAssignedList);
+      window.addEventListener('skill-studio-role-rendered', () => renderLibrary(localSkills, localSearchQuery));
+      window.addEventListener('skill-studio-role-rendered', () => renderPicker(pickerSearch.value));
+      document.getElementById('skillGraphView').addEventListener('click', () => setView('graph'));
+      document.getElementById('skillListViewToggle').addEventListener('click', () => setView('list'));
+      document.getElementById('closeInspector').addEventListener('click', () => window.skillStudio?.selectSkill(null));
+      document.getElementById('pickerClose').addEventListener('click', closePicker);
+      document.getElementById('saveSkillAlias').addEventListener('click', saveSkillAlias);
+      picker.addEventListener('click', event => { if (event.target === picker) closePicker(); });
+      pickerSearch.addEventListener('input', () => renderPicker(pickerSearch.value));
+      localSkillSearch.addEventListener('input', event => {
+        localSearchQuery = event.target.value;
+        renderLibrary(localSkills, localSearchQuery);
+      });
+      const syncRoleToCodex = async () => {
+        if (!['http:', 'https:'].includes(location.protocol)) {
+          status.textContent = '离线预览模式不能写入 Codex Skill 目录。';
+          return;
+        }
+        const state = window.skillStudio?.getState?.();
+        if (!state) return;
+        // 与「导出角色 Skill」共用同一份模板，避免两边内容不一致。
+        const markdown = state.markdown;
+        try {
+          const response = await fetch(`/api/roles/${encodeURIComponent(state.id)}/sync`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ markdown }) });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || '同步失败');
+          document.getElementById('syncText').textContent = '已写入 Codex Skill 目录';
+          status.textContent = `已写入：${result.destination}`;
+        } catch (error) {
+          status.textContent = `同步失败：${error.message}`;
+        }
+      };
+      document.getElementById('syncBtn').addEventListener('click', syncRoleToCodex);
+      // 左侧栏支持收起，收起状态记在本地。
+      const sidebarStorageKey = 'skill-studio-sidebar-collapsed';
+      const sidebarToggle = document.getElementById('sidebarToggle');
+      const applySidebarState = collapsed => {
+        document.querySelector('.app')?.classList.toggle('collapsed', collapsed);
+        if (!sidebarToggle) return;
+        const label = collapsed ? '展开侧边栏' : '收起侧边栏';
+        const icon = sidebarToggle.querySelector('.sidebar-toggle-icon');
+        if (icon) icon.textContent = collapsed ? '»' : '«';
+        sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
+        sidebarToggle.setAttribute('aria-label', label);
+        sidebarToggle.title = label;
+      };
+      let sidebarCollapsed = false;
+      try { sidebarCollapsed = localStorage.getItem(sidebarStorageKey) === '1'; } catch { /* 本地缓存不可用 */ }
+      applySidebarState(sidebarCollapsed);
+      sidebarToggle?.addEventListener('click', () => {
+        sidebarCollapsed = !sidebarCollapsed;
+        applySidebarState(sidebarCollapsed);
+        try { localStorage.setItem(sidebarStorageKey, sidebarCollapsed ? '1' : '0'); } catch { /* 本地缓存不可用 */ }
+      });
+      loadLocalSkills();
+    })();
+  </script>
+</body>
+</html>

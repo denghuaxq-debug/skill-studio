@@ -1,0 +1,17 @@
+[package]
+name = "skill-studio-desktop"
+version = "0.1.0"
+edition = "2021"
+description = "Skill Studio desktop shell built on WebView2"
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+codegen-units = 1
+
+[dependencies]
+png = "0.18.1"
+tao = "0.37.1"
+wry = "0.57.0"
+

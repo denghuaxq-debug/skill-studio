@@ -1,0 +1,19 @@
+{
+  "name": "skill-studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "把 Codex Skill 编排成可调用的角色 Skill，并同步到本机 Codex Skill 目录",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "client": "node src/backend/server.js",
+    "build:exe": "node build/exe/build.mjs",
+    "build:app": "node build/desktop/build.mjs",
+    "snapshot": "node build/snapshot-offline.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "postject": "^1.0.0-alpha.6",
+    "resedit": "^3.1.0"
+  }
+}

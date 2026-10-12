@@ -1,0 +1,21 @@
+# 依赖
+node_modules/
+
+# 打包产物
+SkillStudio/
+build/.work/
+build/desktop/target/
+
+# 运行期数据（真实角色、别名、同步记录、知识库文件）
+data/state.json
+data/roles.json
+data/knowledge/
+
+# 本地 Skill 扫描目录
+.agents/
+
+# 日志与系统文件
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini

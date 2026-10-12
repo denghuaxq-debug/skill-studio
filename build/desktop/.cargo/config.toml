@@ -1,0 +1,4 @@
+# Rust 编译产物放在 build/desktop/target，已在 .gitignore 中忽略。
+[build]
+target-dir = "target"
+

@@ -1,0 +1,33 @@
+{
+  "roles": {
+    "example-backend": {
+      "name": "示例角色 · 后端",
+      "description": "演示用的编排角色：把接口设计与测试能力组合在一起。",
+      "avatar": "🧩",
+      "invoke": "$example-backend",
+      "synced": false,
+      "skills": [
+        {
+          "id": "api-design-63d9d710",
+          "mode": "core"
+        },
+        {
+          "id": "tdd-workflow-bc12525",
+          "mode": "on_demand"
+        },
+        {
+          "id": "security-review-21b179fa",
+          "mode": "on_demand"
+        }
+      ],
+      "defaultConstraints": [
+        "接口变更先补测试，再实现功能",
+        "所有外部输入必须校验，禁止硬编码密钥"
+      ]
+    }
+  },
+  "syncHistory": [],
+  "skillAliases": {
+    "api-design-63d9d710": "接口设计规范"
+  }
+}
