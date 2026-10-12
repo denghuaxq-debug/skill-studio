@@ -26,11 +26,11 @@
 │   ├── studioServer.js        HTTP 服务：路由、状态存储、同步写入
 │   ├── skillScanner.js        扫描目录、解析 SKILL.md 的 frontmatter
 │   └── exeRuntime.js          数据目录候选、端口顺延、可写探测
-├── src/domain/roleStore.js    角色操作的纯函数与角色 Skill 生成
 ├── build/
 │   ├── desktop/               Rust 桌面外壳 + 打包脚本
 │   ├── exe/                   Node SEA 单文件服务打包
-│   └── snapshot-offline.mjs   生成 offline-skills.js
+│   ├── snapshot-offline.mjs   生成 offline-skills.js
+│   └── screenshots.mjs        用示例数据重新生成文档截图
 └── tests/                     node:test 测试
 ```
 
@@ -123,6 +123,23 @@ SkillStudio/
 ```
 
 外壳只认同级的 `service/SkillStudio.exe`，所以这两个文件不能拆开。
+
+## 文档截图
+
+`docs/images/` 里的截图由脚本生成，不要手工截图替换：
+
+```bash
+npm run screenshots
+```
+
+它的做法是：在临时目录里造一份假 Skill（`api-design` / `tdd-workflow` / `security-review`）、种一份示例角色，起一个只服务这份数据的本地服务，然后用 DevTools 协议驱动无头浏览器逐场景截屏。
+
+两个细节值得注意：
+
+- API 响应里的 Skill 路径会被替换成 `~/.agents/skills/...`，所以截图里不会出现本机的临时目录；
+- 需要本机有 Chromium 内核的浏览器，脚本按 `CHROME_PATH` → Playwright 缓存 → 系统 Chrome/Edge 的顺序查找，选缓存里最新的版本。
+
+改了界面之后重跑一次，`docs/` 和 README 里的图会自动更新。
 
 ## 图标
 

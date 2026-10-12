@@ -29,7 +29,8 @@
     "client": "node src/backend/server.js",
     "build:exe": "node build/exe/build.mjs",
     "build:app": "node build/desktop/build.mjs",
-    "snapshot": "node build/snapshot-offline.mjs"
+    "snapshot": "node build/snapshot-offline.mjs",
+    "screenshots": "node build/screenshots.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",

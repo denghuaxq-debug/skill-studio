@@ -115,18 +115,16 @@ npm run build:app
 .
 ├── index.html                单文件界面（HTML + CSS + JS，无构建步骤）
 ├── offline-skills.js         离线预览用的 Skill 快照，由 npm run snapshot 生成
-├── src/
-│   ├── backend/
-│   │   ├── server.js         开发模式入口
-│   │   ├── studioServer.js   HTTP 服务与 API
-│   │   ├── skillScanner.js   扫描并解析 SKILL.md
-│   │   └── exeRuntime.js     数据目录 / 端口 / Skill 根目录解析
-│   └── domain/
-│       └── roleStore.js      角色操作与编排 Skill 生成
+├── src/backend/
+│   ├── server.js             开发模式入口
+│   ├── studioServer.js       HTTP 服务与 API
+│   ├── skillScanner.js       扫描并解析 SKILL.md
+│   └── exeRuntime.js         数据目录 / 端口 / Skill 根目录解析
 ├── build/
 │   ├── desktop/              Rust + WebView2 桌面外壳
 │   ├── exe/                  Node SEA 单文件服务
-│   └── snapshot-offline.mjs  生成 offline-skills.js
+│   ├── snapshot-offline.mjs  生成 offline-skills.js
+│   └── screenshots.mjs       重新生成文档截图
 ├── tests/                    node:test 测试
 ├── docs/                     文档与截图
 └── data/
@@ -190,6 +188,7 @@ npm test                           # 界面结构 + 服务端 + 角色模型 + �
 cd build/desktop && cargo test      # 桌面外壳单元测试
 npm run snapshot                    # 按本机 Skill 目录重新生成离线快照
 npm run snapshot -- <dir> ...       # 指定目录生成快照
+npm run screenshots                 # 重新生成 docs/images 里的界面截图
 ```
 
 改代码前建议先读 [开发说明](docs/development.md)，尤其是 `index.html` 里三段脚本的作用域划分。

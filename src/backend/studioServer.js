@@ -203,8 +203,19 @@ export function createStudioServer({ dataDirectory, skillRoots = [], targetDirec
     }
 
     if (request.method === 'DELETE' && syncMatch) {
+      const deleteRoleId = safeSegment(decodeURIComponent(syncMatch[1]))
+
+      // 上传的知识文件属于应用自己的数据，角色没了就一起清掉，
+      // 否则 data/knowledge/<角色 ID> 会永远留在磁盘上、界面上再也访问不到。
+      await fs.rm(path.join(dataDirectory, 'knowledge', deleteRoleId), { recursive: true, force: true })
+
+      // synced=0 表示用户取消勾选，保留已经同步出去的目录。
+      if (url.searchParams.get('synced') === '0') {
+        return send(response, 200, { ok: true, removed: false })
+      }
+
       const resolvedTarget = path.resolve(targetDirectory)
-      const roleDirectory = path.resolve(path.join(resolvedTarget, safeSegment(decodeURIComponent(syncMatch[1]))))
+      const roleDirectory = path.resolve(path.join(resolvedTarget, deleteRoleId))
 
       // 只允许删目标目录下的子目录，避免路径穿越误删别的文件。
       if (!roleDirectory.startsWith(resolvedTarget + path.sep)) {

@@ -172,8 +172,10 @@ test('can remove the synced skill file together with the role', () => {
   assert.match(html, /document\.getElementById\('deleteRoleSyncFile'\)\.checked = true;/)
   assert.match(html, /const alsoRemoveSynced = document\.getElementById\('deleteRoleSyncFile'\)\.checked;/)
   assert.match(html, /function submitRoleDelete\(\) \{/)
-  assert.match(html, /await fetch\(`\/api\/roles\/\$\{encodeURIComponent\(id\)\}\/sync`, \{ method: 'DELETE' \}\)/)
+  // 是否回收同步目录用查询参数传，本地知识库文件由服务端一并清理。
+  assert.match(html, /await fetch\(`\/api\/roles\/\$\{encodeURIComponent\(id\)\}\/sync\?synced=\$\{alsoRemoveSynced \? '1' : '0'\}`, \{ method: 'DELETE' \}\)/)
   assert.match(html, /已删除角色「\$\{role\.name\}」和已同步的文件/)
+  assert.match(html, /取消勾选则只删除角色，保留已同步出去的文件/)
 })
 
 test('lets each role keep a knowledge base of folders and uploaded files', () => {

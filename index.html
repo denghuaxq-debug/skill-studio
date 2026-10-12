@@ -762,17 +762,18 @@ ${constraints}
         updateRoles(nextRoles);
         renderRole();
         selectSkill(activeRole().skills[0]?.id || null);
-        if (!alsoRemoveSynced || !['http:', 'https:'].includes(location.protocol)) {
+        if (!['http:', 'https:'].includes(location.protocol)) {
           showToast(`已删除角色「${role.name}」`);
           return;
         }
         try {
-          const response = await fetch(`/api/roles/${encodeURIComponent(id)}/sync`, { method: 'DELETE' });
+          // 无论是否回收同步目录，都要请求一次：本地知识库上传的文件也要一并清掉。
+          const response = await fetch(`/api/roles/${encodeURIComponent(id)}/sync?synced=${alsoRemoveSynced ? '1' : '0'}`, { method: 'DELETE' });
           const result = await response.json();
           if (!response.ok) throw new Error(result.error || '清理失败');
-          showToast(result.removed ? `已删除角色「${role.name}」和已同步的文件` : `已删除角色「${role.name}」（没有找到已同步的文件）`);
+          showToast(result.removed ? `已删除角色「${role.name}」和已同步的文件` : `已删除角色「${role.name}」`);
         } catch (error) {
-          showToast(`角色已删除，但清理同步文件失败：${error.message}`);
+          showToast(`角色已删除，但清理文件失败：${error.message}`);
         }
       }
       function selectSkill(id) {

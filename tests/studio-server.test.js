@@ -134,6 +134,36 @@ test('removes the synced skill folder when the role is deleted', async () => {
   }
 })
 
+test('cleans uploaded knowledge files when the role is deleted', async () => {
+  const studio = await startStudio()
+  try {
+    const knowledgeDirectory = path.join(studio.dataDirectory, 'knowledge', 'demo-9')
+    const roleDirectory = path.join(studio.dataDirectory, 'skills', 'demo-9')
+
+    await fetch(`${studio.origin}/api/knowledge/demo-9/files?name=spec.md`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: 'spec',
+    })
+    await fetch(`${studio.origin}/api/roles/demo-9/sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ markdown: '# demo\n' }),
+    })
+    assert.equal(await fs.stat(knowledgeDirectory).then(() => true, () => false), true)
+
+    // synced=0 表示用户取消勾选：同步出去的目录保留，但应用自己存的副本要清掉，
+    // 否则角色删掉之后这些文件再也没机会被访问。
+    const payload = await (await fetch(`${studio.origin}/api/roles/demo-9/sync?synced=0`, { method: 'DELETE' })).json()
+
+    assert.equal(payload.removed, false)
+    assert.equal(await fs.stat(knowledgeDirectory).then(() => true, () => false), false)
+    assert.equal(await fs.stat(roleDirectory).then(() => true, () => false), true)
+  } finally {
+    await studio.close()
+  }
+})
+
 test('reports nothing to remove when the role was never synced', async () => {
   const studio = await startStudio()
   try {
