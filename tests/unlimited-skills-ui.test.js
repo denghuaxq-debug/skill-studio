@@ -400,6 +400,19 @@ test('supports local Skill aliases across views and lets users save a custom ali
   assert.match(html, /localStorage\.setItem\(aliasStorageKey/)
 })
 
+test('keeps the Skill detail panel in sync once the catalog is ready', () => {
+  // Skill 目录里要带上按别名算好的标题与说明，各条选中路径才会一致。
+  assert.match(html, /title: skill\.displayName \|\| skill\.name/)
+  assert.match(html, /desc: skill\.displayDesc \|\| skill\.description/)
+  assert.match(html, /displayName: getSkillDisplayName\(skill\)/)
+  assert.match(html, /displayDesc: getSkillDescription\(skill\)/)
+
+  // hydrateRoles 在目录就绪前触发过选中，setCatalog 完成后要补一次，
+  // 否则右侧会停在「尚未选择 Skill」，和已赋予的 Skill 对不上。
+  assert.match(html, /if \(!currentSkillId\) selectSkill\(activeRole\(\)\?\.skills\[0\]\?\.id \?\? null\)/)
+  assert.match(html, /if \(!id\) showDetailTab\('overview'\)/)
+})
+
 test('loads and persists role state through the local service', () => {
   assert.match(html, /function hydrateRoles\(serverRoles\)/)
   assert.match(html, /queuePersistence\('\/api\/roles'/)
@@ -413,4 +426,14 @@ test('persists aliases and sync history in the local state file', () => {
   assert.match(html, /persistState\(\{ syncHistory \}\)/)
   assert.match(html, /skill-studio-state-loaded/)
   assert.match(server, /const stateFile/)
+})
+
+test('does not mark a role as synced when writes are impossible', () => {
+  // 离线预览写不进 Codex 目录，本地不要抢先标记「已同步」，否则两个提示自相矛盾。
+  const syncBody = html.match(/function syncRole\(\) \{[\s\S]*?\n      \}/)[0]
+  assert.match(syncBody, /if \(!\['http:', 'https:'\]\.includes\(location\.protocol\)\) return;/)
+  assert.match(syncBody, /synced: true/)
+  // 真正落盘的仍然只有 syncRoleToCodex 这一条路径。
+  assert.match(html, /fetch\(`\/api\/roles\/\$\{encodeURIComponent\(state\.id\)\}\/sync`/)
+  assert.match(html, /离线预览模式不能写入 Codex Skill 目录/)
 })

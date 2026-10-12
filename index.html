@@ -602,9 +602,10 @@
       const catalogItem = (id) => clientCatalog[id];
       function setCatalog(skills) {
         const nextCatalog = Object.fromEntries(skills.map(skill => [skill.id, {
-          title: skill.name,
+          // displayName / displayDesc 由上层按别名算好，没有时退回原名与原文。
+          title: skill.displayName || skill.name,
           icon: '◌',
-          desc: skill.description,
+          desc: skill.displayDesc || skill.description,
           permission: '读取本地文件',
           usage: skill.source === 'offline-snapshot' ? '离线快照' : '本地 Skill',
           mode: '按需',
@@ -624,6 +625,9 @@
         clientRoles = nextRoles;
         save();
         renderRole();
+        // 目录就绪前 hydrateRoles 已经触发过一次选中，这里补一次，
+        // 否则右侧会停在「尚未选择 Skill」，和实际已赋予的 Skill 不一致。
+        if (!currentSkillId) selectSkill(activeRole()?.skills[0]?.id ?? null);
       }
       const catalogEntry = (id) => clientCatalog[id] || {};
       const catalogTitle = (item) => catalogEntry(item.id).title || item.id;
@@ -985,6 +989,8 @@ ${constraints}
       function syncRole() {
         const role = activeRole();
         if (!role) return;
+        // 离线预览写不进 Codex 目录，交给 syncRoleToCodex 给提示，这里不要抢先标记已同步。
+        if (!['http:', 'https:'].includes(location.protocol)) return;
         syncHistory = [{ roleId: activeRoleId, roleName: role.name, invoke: role.invoke, timestamp: new Date().toLocaleString('zh-CN') }, ...syncHistory].slice(0, 20);
         saveSyncHistory();
         updateRoles({ ...clientRoles, [activeRoleId]: { ...role, synced: true } });
@@ -1686,7 +1692,12 @@ ${constraints}
           : `已扫描 ${roots.length} 个 Skill 根目录，共 ${localSkills.length} 个，可滚动查看。`;
         renderLibrary(localSkills, localSearchQuery);
         remapAliases(localSkills);
-        window.skillStudio?.setCatalog(localSkills);
+        // 目录里带上按别名算好的标题与说明，右侧面板和节点点击才能显示一致。
+        window.skillStudio?.setCatalog(localSkills.map(skill => ({
+          ...skill,
+          displayName: getSkillDisplayName(skill),
+          displayDesc: getSkillDescription(skill),
+        })));
         renderAliasEditor(localSkills.find(skill => skill.id === selectedSkillId));
         renderPicker();
         renderDynamicGraphNodes();
