@@ -191,6 +191,8 @@ npm run snapshot -- <dir> ...       # 指定目录生成快照
 npm run screenshots                 # 重新生成 docs/images 里的界面截图
 ```
 
+`npm test` 除了界面、服务端与扫描器测试，还会校验 `docs/` 里的相对链接是否都指向真实文件。CI 配置在 `.github/workflows/ci.yml`，main 分支推送和 PR 都会跑。
+
 改代码前建议先读 [开发说明](docs/development.md)，尤其是 `index.html` 里三段脚本的作用域划分。
 
 ## 贡献

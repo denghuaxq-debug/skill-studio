@@ -328,9 +328,7 @@
       <div class="side-roles">
         <div class="side-label">我的角色</div>
         <div class="role-list" style="margin-top:10px">
-          <button class="role active" data-role="backend"><div class="role-icon">👨‍💻</div><div class="role-copy"><strong>Java 后端工程师</strong><span>6 个 Skills · 已同步</span></div></button>
-          <button class="role" data-role="research"><div class="role-icon">🔎</div><div class="role-copy"><strong>市场研究员</strong><span>4 个 Skills · 草稿</span></div></button>
-          <button class="role" data-role="release"><div class="role-icon">🚀</div><div class="role-copy"><strong>发版管理员</strong><span>5 个 Skills · 已同步</span></div></button>
+          <button class="role active" data-role="example-backend"><div class="role-icon">🧩</div><div class="role-copy"><strong>示例角色 · 后端</strong><span>3 个 Skills · 草稿</span></div></button>
           <button class="new-role" id="newRole" type="button"><span class="new-role-icon">＋</span><span class="new-role-text">新建角色 Skill</span></button>
         </div>
       </div>
@@ -358,12 +356,12 @@
 
       <section class="layout">
         <div class="card canvas-card">
-          <div class="canvas-head"><div><strong id="canvasTitle">Java 后端工程师</strong><span>围绕这个角色启用的 Skills · 可拖动调整位置</span></div><div class="canvas-actions"><button class="outline" id="knowledgeBtn" type="button">知识库</button><button class="outline" id="addSkillBtn" type="button">＋ 添加 Skill</button><div class="view-toggle"><button class="active" id="skillGraphView" type="button">关系图</button><button id="skillListViewToggle" type="button">列表</button></div></div></div>
+          <div class="canvas-head"><div><strong id="canvasTitle">示例角色 · 后端</strong><span>围绕这个角色启用的 Skills · 可拖动调整位置</span></div><div class="canvas-actions"><button class="outline" id="knowledgeBtn" type="button">知识库</button><button class="outline" id="addSkillBtn" type="button">＋ 添加 Skill</button><div class="view-toggle"><button class="active" id="skillGraphView" type="button">关系图</button><button id="skillListViewToggle" type="button">列表</button></div></div></div>
           <div class="orbit-viewport"><div class="orbit-stage">
             <div class="orbit one"></div><div class="orbit two"></div>
             <span class="orbit-label core">核心 Skills</span><span class="orbit-label optional">按需启用</span>
             <div class="connector a"></div><div class="connector b"></div><div class="connector c"></div><div class="connector d"></div><div class="connector e"></div><div class="connector f"></div>
-            <button class="person" id="rolePerson" type="button" aria-label="配置当前角色默认设置"><div class="person-avatar" id="personAvatar">👨‍💻</div><strong id="personName">Java 后端工程师</strong><span>编排 Skill</span><span class="person-settings-summary" id="personConstraintSummary">默认规范 · 3 条</span><div class="person-status"><i></i>可在 Codex 使用</div></button>
+            <button class="person" id="rolePerson" type="button" aria-label="配置当前角色默认设置"><div class="person-avatar" id="personAvatar">🧩</div><strong id="personName">示例角色 · 后端</strong><span>编排 Skill</span><span class="person-settings-summary" id="personConstraintSummary">默认规范 · 2 条</span><div class="person-status"><i></i>可在 Codex 使用</div></button>
             <div class="graph-empty" id="graphEmpty">扫描本地 Skill 后，赋予的能力会显示在角色周围</div>
           </div></div>
           <div class="skill-list-view" id="skillListView" aria-live="polite"></div>
@@ -531,10 +529,10 @@
     (() => {
       const roleStorageKey = 'skill-studio-roles-v1';
       const syncHistoryStorageKey = 'skill-studio-sync-history-v1';
+      // 离线预览用的示例角色。只引用 offline-skills.js 里存在的 Skill，
+      // 否则直接用浏览器打开页面时，关系图节点和右侧面板会对不上。
       const defaultRoleState = {
-        backend: { name: 'Java 后端工程师', description: '负责 Spring Boot 接口开发、测试和代码审查', avatar: '👨‍💻', invoke: '$java-backend', synced: true, defaultConstraints: ['接口变更先补测试，再实现功能', '所有外部输入必须校验，禁止硬编码密钥', '遵循现有 Spring Boot 分层和异常处理规范'], skills: [{ id: 'backend-patterns', mode: 'core' }, { id: 'api-design', mode: 'core' }, { id: 'tdd-workflow', mode: 'on_demand' }, { id: 'security-review', mode: 'on_demand' }] },
-        research: { name: '市场研究员', description: '收集信息、分析竞品并输出决策材料', avatar: '🔎', invoke: '$market-researcher', synced: false, defaultConstraints: ['结论必须标注来源和日期', '区分事实、推断与建议，不夸大确定性'], skills: [{ id: 'market-research', mode: 'core' }] },
-        release: { name: '发版管理员', description: '整理发布内容、检查风险并生成发版纪要', avatar: '🚀', invoke: '$release-manager', synced: true, defaultConstraints: ['发布前完成验证检查并记录结果', '高风险变更必须说明回滚方案'], skills: [{ id: 'verification-loop', mode: 'core' }] }
+        'example-backend': { name: '示例角色 · 后端', description: '演示用的编排角色：把接口设计与测试能力组合在一起', avatar: '🧩', invoke: '$example-backend', synced: false, defaultConstraints: ['接口变更先补测试，再实现功能', '所有外部输入必须校验，禁止硬编码密钥'], skills: [{ id: 'api-design', mode: 'core' }, { id: 'tdd-workflow', mode: 'on_demand' }, { id: 'security-review', mode: 'on_demand' }] }
       };
       let clientRoles;
       let roleStateHydrated = false;
@@ -627,7 +625,9 @@
         renderRole();
         // 目录就绪前 hydrateRoles 已经触发过一次选中，这里补一次，
         // 否则右侧会停在「尚未选择 Skill」，和实际已赋予的 Skill 不一致。
-        if (!currentSkillId) selectSkill(activeRole()?.skills[0]?.id ?? null);
+        // 角色里可能有这台机器上并不存在的 Skill，挑第一个认得出来的，
+        // 免得面板停在「尚未选择 Skill」——离线预览就踩过这个坑。
+        if (!currentSkillId) selectSkill(activeRole()?.skills.find(item => clientCatalog[item.id])?.id ?? null);
       }
       const catalogEntry = (id) => clientCatalog[id] || {};
       const catalogTitle = (item) => catalogEntry(item.id).title || item.id;
@@ -987,17 +987,17 @@ ${constraints}
       }
       function openSyncHistory() { renderSyncHistory(); document.getElementById('syncHistory').classList.remove('hidden'); }
       function closeSyncHistory() { document.getElementById('syncHistory').classList.add('hidden'); }
-      function syncRole() {
-        const role = activeRole();
+      // 只有真正写盘成功才把角色标记为已同步。落盘由第三段脚本负责，成功后派发这个事件，
+      // 避免写入失败时顶栏仍然显示「已同步到 Codex」。
+      window.addEventListener('skill-studio-role-synced', event => {
+        const id = event.detail?.id;
+        const role = id ? clientRoles[id] : null;
         if (!role) return;
-        // 离线预览写不进 Codex 目录，交给 syncRoleToCodex 给提示，这里不要抢先标记已同步。
-        if (!['http:', 'https:'].includes(location.protocol)) return;
-        syncHistory = [{ roleId: activeRoleId, roleName: role.name, invoke: role.invoke, timestamp: new Date().toLocaleString('zh-CN') }, ...syncHistory].slice(0, 20);
+        syncHistory = [{ roleId: id, roleName: role.name, invoke: role.invoke, timestamp: new Date().toLocaleString('zh-CN') }, ...syncHistory].slice(0, 20);
         saveSyncHistory();
-        updateRoles({ ...clientRoles, [activeRoleId]: { ...role, synced: true } });
-        renderRole();
-        showToast('角色 Skill 已标记为 Codex 可用');
-      }
+        updateRoles({ ...clientRoles, [id]: { ...role, synced: true } });
+        if (activeRoleId === id) renderRole();
+      });
       function saveRoleSettings() {
         const role = activeRole();
         if (!role) return;
@@ -1106,7 +1106,6 @@ ${constraints}
       document.getElementById('roleExportClose').addEventListener('click', closeRolePreview);
       document.getElementById('roleExportCancel').addEventListener('click', closeRolePreview);
       document.getElementById('roleExportPreview').addEventListener('click', event => { if (event.target.id === 'roleExportPreview') closeRolePreview(); });
-      document.getElementById('syncBtn').addEventListener('click', syncRole);
       document.getElementById('copyInvoke').addEventListener('click', () => copyInvoke());
       document.getElementById('saveInvoke').addEventListener('click', saveInvoke);
       document.getElementById('knowledgeBtn').addEventListener('click', openKnowledge);
@@ -1162,7 +1161,7 @@ ${constraints}
       document.getElementById('syncHistory').addEventListener('click', event => { if (event.target.id === 'syncHistory') closeSyncHistory(); });
       document.getElementById('addSkillBtn').addEventListener('click', () => window.dispatchEvent(new CustomEvent('skill-studio-open-picker')));
       renderRole(); selectSkill(activeRole().skills[0]?.id || null);
-      window.skillStudio = { selectSkill, renderRole, addSkill, attachSkill, removeSkill, setSkillPosition, setCatalog, hydrateRoles, persistState, getState: () => ({ id: activeRoleId, role: { ...activeRole(), defaultConstraints: [...(activeRole().defaultConstraints || [])], skills: activeRole().skills.map(item => ({ ...item, position: item.position ? { ...item.position } : undefined })) }, markdown: roleMarkdown(activeRole()) }) };
+      window.skillStudio = { selectSkill, renderRole, addSkill, attachSkill, removeSkill, setSkillPosition, setCatalog, hydrateRoles, persistState, showToast, getState: () => ({ id: activeRoleId, role: { ...activeRole(), defaultConstraints: [...(activeRole().defaultConstraints || [])], skills: activeRole().skills.map(item => ({ ...item, position: item.position ? { ...item.position } : undefined })) }, markdown: roleMarkdown(activeRole()) }) };
     })();
   </script>
   <script>
@@ -1767,8 +1766,12 @@ ${constraints}
           if (!response.ok) throw new Error(result.error || '同步失败');
           document.getElementById('syncText').textContent = '已写入 Codex Skill 目录';
           status.textContent = `已写入：${result.destination}`;
+          // 交给第二段脚本记录同步历史并把角色标记为已同步。
+          window.dispatchEvent(new CustomEvent('skill-studio-role-synced', { detail: { id: state.id } }));
+          window.skillStudio?.showToast?.('角色 Skill 已同步到 Codex');
         } catch (error) {
           status.textContent = `同步失败：${error.message}`;
+          window.skillStudio?.showToast?.(`同步失败：${error.message}`);
         }
       };
       document.getElementById('syncBtn').addEventListener('click', syncRoleToCodex);

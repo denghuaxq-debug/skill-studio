@@ -411,7 +411,7 @@ test('keeps the Skill detail panel in sync once the catalog is ready', () => {
 
   // hydrateRoles 在目录就绪前触发过选中，setCatalog 完成后要补一次，
   // 否则右侧会停在「尚未选择 Skill」，和已赋予的 Skill 对不上。
-  assert.match(html, /if \(!currentSkillId\) selectSkill\(activeRole\(\)\?\.skills\[0\]\?\.id \?\? null\)/)
+  assert.match(html, /if \(!currentSkillId\) selectSkill\(activeRole\(\)\?\.skills\.find\(item => clientCatalog\[item\.id\]\)\?\.id \?\? null\)/)
   assert.match(html, /if \(!id\) showDetailTab\('overview'\)/)
 })
 
@@ -430,12 +430,36 @@ test('persists aliases and sync history in the local state file', () => {
   assert.match(server, /const stateFile/)
 })
 
-test('does not mark a role as synced when writes are impossible', () => {
-  // 离线预览写不进 Codex 目录，本地不要抢先标记「已同步」，否则两个提示自相矛盾。
-  const syncBody = html.match(/function syncRole\(\) \{[\s\S]*?\n      \}/)[0]
-  assert.match(syncBody, /if \(!\['http:', 'https:'\]\.includes\(location\.protocol\)\) return;/)
-  assert.match(syncBody, /synced: true/)
-  // 真正落盘的仍然只有 syncRoleToCodex 这一条路径。
-  assert.match(html, /fetch\(`\/api\/roles\/\$\{encodeURIComponent\(state\.id\)\}\/sync`/)
+test('only marks a role as synced after the file is actually written', () => {
+  // #syncBtn 只能有一个处理函数，否则成功和失败的状态会互相打架。
+  assert.equal((html.match(/getElementById\('syncBtn'\)\.addEventListener/g) || []).length, 1)
+  assert.match(html, /document\.getElementById\('syncBtn'\)\.addEventListener\('click', syncRoleToCodex\)/)
+  assert.doesNotMatch(html, /function syncRole\(\)/)
+
+  // 离线预览写不进 Codex 目录，先给提示，不要动状态。
   assert.match(html, /离线预览模式不能写入 Codex Skill 目录/)
+
+  // 本地标记改由成功事件驱动，事件只在写入成功之后派发。
+  const sync = html.match(/const syncRoleToCodex = async \(\) => \{[\s\S]*?\n      \};/)[0]
+  assert.match(sync, /if \(!response\.ok\) throw new Error\(result\.error \|\| '同步失败'\);/)
+  assert.match(sync, /window\.dispatchEvent\(new CustomEvent\('skill-studio-role-synced', \{ detail: \{ id: state\.id \} \}\)\)/)
+  assert.ok(
+    sync.indexOf('skill-studio-role-synced') > sync.indexOf("if (!response.ok) throw"),
+    '派发事件必须发生在写入成功之后',
+  )
+  assert.match(sync, /catch \(error\) \{[\s\S]*status\.textContent = `同步失败：\$\{error\.message\}`;[\s\S]*window\.skillStudio\?\.showToast\?\.\(`同步失败：\$\{error\.message\}`\)/)
+
+  const listener = html.match(/window\.addEventListener\('skill-studio-role-synced'[\s\S]*?\n      \}\);/)[0]
+  assert.match(listener, /synced: true/)
+  assert.match(listener, /saveSyncHistory\(\)/)
+})
+
+test('picks a resolvable Skill once the catalog is ready', () => {
+  // 角色里可能有这台机器上不存在的 Skill，不能死取第一个。
+  assert.match(html, /if \(!currentSkillId\) selectSkill\(activeRole\(\)\?\.skills\.find\(item => clientCatalog\[item\.id\]\)\?\.id \?\? null\)/)
+
+  // 内置演示角色只能引用示例快照里存在的 Skill，否则离线预览面板会停在「尚未选择」。
+  const demo = html.match(/const defaultRoleState = \{[\s\S]*?\n      \};/)[0]
+  const referenced = [...demo.matchAll(/id: '([a-z-]+)'/g)].map((match) => match[1])
+  assert.deepEqual(referenced.sort(), ['api-design', 'security-review', 'tdd-workflow'])
 })

@@ -75,6 +75,8 @@ Skill 的 ID 是 `名字-哈希`，哈希由 `SKILL.md` 的绝对路径算出（
 
 同样地，`selectSkill` 和 `syncRole` 这类名字在两段里各有一个，改动时确认打到了哪一处。
 
+同步这条路径把两侧串起来了：第三段的 `syncRoleToCodex` 负责落盘，写成功之后派发 `skill-studio-role-synced`；第二段监听这个事件，记录同步历史并把角色标记为已同步。这样写失败时顶栏不会先变成「已同步到 Codex」。想在脚本之间传状态，优先照这个模式加事件，不要去猜另一个作用域里有什么。
+
 别名要显示成中文，就必须在传给 `setCatalog` 之前算好：第二段拿不到别名表，所以第三段的 `applySkills` 会补上 `displayName` / `displayDesc` 再传进去。
 
 ## 改代码时的几条约定
@@ -93,6 +95,10 @@ cd build/desktop && cargo test   # 桌面外壳
 ```
 
 界面测试的做法是直接读 `index.html` 做静态断言（正则匹配关键结构），好处是零依赖、跑得快，代价是改动结构时要同步改断言。服务端和扫描器测试用真实的临时目录 + 真实的 HTTP 请求。
+
+另外 `tests/docs-links.test.js` 会检查所有 Markdown 里的相对链接是否指向真实文件（门槛是至少 20 条，防止正则失效后「一条都没查」也算通过）。
+
+**已知的短板**：界面测试基本是字符串断言，测不到运行时行为——像「打开应用时面板停在尚未选择 Skill」这种问题它就发现不了。`build/screenshots.mjs` 里的 DevTools 驱动已经把真实浏览器跑通了，之后做端到端冒烟可以复用它。
 
 加新功能时优先补两种测试：
 
@@ -162,6 +168,19 @@ powershell -ExecutionPolicy Bypass -File build/desktop/tools/prepare-logo.ps1
 | `SKILL_STUDIO_OUTPUT` | 打包输出目录 | 仓库同级的 `SkillStudio/` |
 | `SKILL_STUDIO_SHELL_NAME` | 外壳 exe 名称 | `SkillStudio.exe` |
 | `SKILL_STUDIO_EXE_NAME` | 服务 exe 名称 | `SkillStudio.exe` |
+
+## 持续集成
+
+`.github/workflows/ci.yml` 有两个 job：
+
+| job | 环境 | 跑什么 |
+| --- | --- | --- |
+| Node 测试 | ubuntu | `npm ci` + `npm test`（含文档链接检查） |
+| 桌面外壳测试 | windows | `cargo test`（在 `build/desktop` 下） |
+
+main 分支的 push 和所有 PR 都会触发。Gitee 那边用的是另一套 Gitee Go 配置，需要在仓库的流水线页面单独建，不能直接复用这个文件。
+
+改了章节标题记得回头看一眼 `docs/` 里的锚点链接，CI 只校验文件是否存在，不会校验 `#锚点`。
 
 ## 发版流程
 
