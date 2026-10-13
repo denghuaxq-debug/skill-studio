@@ -92,6 +92,21 @@ Windows PowerShell 里用 `$env:SKILL_STUDIO_PORT = '5000'`。
 
 别名是全局的：给某个 Skill 起了中文名，所有引用它的地方都显示同一个别名。
 
+## 怎么给一批 Skill 预先起好中文名？
+
+在数据目录建一个 `alias-presets.json`，按 Skill 名字写中文名：
+
+```json
+{
+  "my-internal-tool": "内部工具",
+  "my-release-bot": "发版机器人"
+}
+```
+
+界面加载时会把它当默认别名，你在界面上设过的别名优先。因为按名字匹配，换台电脑后 Skill 的 id 变了也照样生效。
+
+这个文件只在你的数据目录里，不会进版本库，也不会被同步到 Codex——适合给不想公开的 Skill 起名字。
+
 ## Skill Studio 会改动我本机的其它 Skill 吗？
 
 不会。扫描是只读的，子 Skill 的内容和位置都不会被修改。

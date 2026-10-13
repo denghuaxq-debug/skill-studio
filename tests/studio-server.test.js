@@ -44,6 +44,31 @@ test('serves the studio page and the offline skill snapshot', async () => {
   }
 })
 
+test('merges local alias presets, letting explicit aliases win', async () => {
+  const studio = await startStudio()
+  try {
+    // 预设按 Skill 名字写，换台电脑后 id 变了也还能对上。
+    await fs.writeFile(
+      path.join(studio.dataDirectory, 'alias-presets.json'),
+      JSON.stringify({ 'api-design': '接口设计规范', 'security-review': '安全检查' }),
+      'utf8',
+    )
+    await fetch(`${studio.origin}/api/state`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skillAliases: { 'security-review': '我自己起的名字' } }),
+    })
+
+    const payload = await (await fetch(`${studio.origin}/api/bootstrap`)).json()
+
+    assert.equal(payload.skillAliases['api-design'], '接口设计规范')
+    // 自己设过的别名优先于预设。
+    assert.equal(payload.skillAliases['security-review'], '我自己起的名字')
+  } finally {
+    await studio.close()
+  }
+})
+
 test('answers studio identity so a second launch can reuse the running window', async () => {
   const studio = await startStudio()
   try {

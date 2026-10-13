@@ -254,7 +254,8 @@ async function main() {
   const chrome = await findChrome()
   const { scanSkillRoots } = await import('../src/backend/skillScanner.js')
 
-  await fs.rm(stage, { recursive: true, force: true })
+  // 上一次运行可能留下还锁着的浏览器缓存，清不掉就继续，不要因此中断。
+  await fs.rm(stage, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }).catch(() => {})
   await seedSkills()
   await seedState(scanSkillRoots)
 
@@ -323,7 +324,8 @@ async function main() {
     // 浏览器留下的 keep-alive 连接会让进程一直不退出，主动断开。
     server.closeAllConnections?.()
     server.close()
-    await fs.rm(stage, { recursive: true, force: true })
+    // 浏览器退出瞬间 profile 里的文件可能还被占着，清理失败不该让脚本报错。
+    await fs.rm(stage, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }).catch(() => {})
   }
 
   console.log(`完成，共 ${shots.length} 张，输出到 docs/images/`)

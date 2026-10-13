@@ -40,6 +40,18 @@ async function listKnowledgeFiles(directory) {
 export function createStateStore(dataDirectory) {
   const stateFile = path.join(dataDirectory, 'state.json')
   const legacyRolesFile = path.join(dataDirectory, 'roles.json')
+  const aliasPresetsFile = path.join(dataDirectory, 'alias-presets.json')
+
+  // 本机私有的别名预设：按 Skill 名字写，换台电脑后 id 变了也照样能对上。
+  // 放到数据目录而不是仓库里，方便给不想公开的 Skill 起中文名。
+  async function readAliasPresets() {
+    try {
+      const parsed = JSON.parse(await fs.readFile(aliasPresetsFile, 'utf8'))
+      return isRecord(parsed) ? parsed : {}
+    } catch {
+      return {}
+    }
+  }
 
   async function readState() {
     try {
@@ -61,7 +73,7 @@ export function createStateStore(dataDirectory) {
     return state
   }
 
-  return { stateFile, readState, writeState }
+  return { stateFile, aliasPresetsFile, readState, readAliasPresets, writeState }
 }
 
 export function createStudioServer({ dataDirectory, skillRoots = [], targetDirectory, assets = {} }) {
@@ -114,8 +126,19 @@ export function createStudioServer({ dataDirectory, skillRoots = [], targetDirec
     }
 
     if (request.method === 'GET' && url.pathname === '/api/bootstrap') {
-      const [skills, state] = await Promise.all([listSkills(), store.readState()])
-      return send(response, 200, { skills, ...state, roots: skillRoots, targetDirectory })
+      const [skills, state, aliasPresets] = await Promise.all([
+        listSkills(),
+        store.readState(),
+        store.readAliasPresets(),
+      ])
+      // 自己设过的别名优先于预设，预设只是没设过时的默认值。
+      return send(response, 200, {
+        skills,
+        ...state,
+        skillAliases: { ...aliasPresets, ...state.skillAliases },
+        roots: skillRoots,
+        targetDirectory,
+      })
     }
 
     if (request.method === 'GET' && url.pathname === '/api/skills') {

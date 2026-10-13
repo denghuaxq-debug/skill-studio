@@ -200,7 +200,23 @@ description: 负责 Spring Boot 接口开发、测试和代码审查。本角色
 | --- | --- |
 | `data/state.json` | 角色、别名、同步记录、调用指令 |
 | `data/knowledge/<角色 ID>/` | 知识库里上传的文件 |
+| `data/alias-presets.json` | 可选的别名预设，需要自己建（见下） |
 
 换电脑时把整个 `data/` 目录复制过去即可。桌面版的 `data/` 就在 `SkillStudio.exe` 同级的 `data` 目录里。
 
 如果换了电脑导致 Skill 路径变化，界面会按 Skill 名字重新对上原来的分配关系，不用重新配一遍。
+
+### 批量预设中文名
+
+如果有一批 Skill 想统一起中文名，又不想在界面里一个个点，可以在数据目录建一个 `alias-presets.json`，按 Skill 名字写：
+
+```json
+{
+  "dqhm-code-review": "代码审查",
+  "dqhm-release-note": "生成发版纪要"
+}
+```
+
+界面加载时会把它当默认别名用，在界面上设过的别名优先于这里的预设。因为按名字匹配，换台电脑后 Skill 的 id 变了也照样生效。
+
+这个文件不参与同步、也不会进版本库，适合给不想公开的 Skill 起名字。想彻底去掉某个预设，改这个文件即可。
